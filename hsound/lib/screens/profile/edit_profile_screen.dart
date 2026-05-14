@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'firestore_service.dart';
+import '../../services/firestore_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -118,16 +118,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           'whatsappUrl': _whatsappController.text,
           'facebookUrl': _facebookController.text,
           'contactEmail': _emailController.text,
-          'isArtist': _isArtist,
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        _showSuccessSnackBar('✅ Perfil actualizado correctamente');
+        _showSuccessSnackBar('Perfil actualizado correctamente');
         
-        Navigator.pop(context); // Volver atrás
+        Navigator.pop(context);
       } catch (e) {
         print('Error saving profile: $e');
-        _showErrorSnackBar('❌ Error al guardar: $e');
+        _showErrorSnackBar('Error al guardar: $e');
       } finally {
         setState(() {
           _isLoading = false;
@@ -142,6 +141,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       backgroundColor: const Color(0xFF212121),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
+        iconTheme: const IconThemeData(color: Color(0xFF4ADE80)),
         title: const Text(
           'Editar Perfil',
           style: TextStyle(color: Color(0xFF4ADE80)),
@@ -240,7 +240,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       // Solo para artistas: enlaces de música y redes
                       if (_isArtist) ...[
                         const SizedBox(height: 20),
-                        _buildSectionHeader('🎵 Enlaces de Música'),
+                        _buildSectionHeader('Enlaces de Musica'),
                         
                         _buildSocialTextField(
                           controller: _youtubeController,
@@ -275,7 +275,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         
                         const SizedBox(height: 20),
-                        _buildSectionHeader('📱 Redes Sociales'),
+                        _buildSectionHeader('Redes Sociales'),
                         
                         _buildSocialTextField(
                           controller: _instagramController,
@@ -294,7 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
 
                         const SizedBox(height: 20),
-                        _buildSectionHeader('📞 Contacto/Booking'),
+                        _buildSectionHeader('Contacto/Booking'),
                         
                         _buildSocialTextField(
                           controller: _whatsappController,

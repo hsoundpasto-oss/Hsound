@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hsound/firestore_service.dart';
-import 'package:hsound/share_service.dart';
+import 'package:hsound/services/firestore_service.dart';
+import 'package:hsound/services/share_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ArtistProfileScreen extends StatefulWidget {
@@ -110,7 +110,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            '✅ Perfil compartido + App',
+            'Perfil compartido + App',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           backgroundColor: const Color(0xFF15803D),
@@ -121,7 +121,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '❌ Error al compartir: $e',
+            'Error al compartir: $e',
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold),
           ),
@@ -138,6 +138,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       backgroundColor: const Color(0xFF212121),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
+        iconTheme: const IconThemeData(color: Color(0xFF4ADE80)),
         title: const Text(
           'Perfil del Artista',
           style: TextStyle(color: Color(0xFF4ADE80)),
@@ -228,9 +229,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                             color: const Color(0xFF4ADE80),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Text(
-                            '🎵 ARTISTA',
-                            style: TextStyle(
+            child: const Text(
+              'Sigueme en:',
+              style: TextStyle(
                               color: Color(0xFF1E1E1E),
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -265,7 +266,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
 
                   // Sección de Canciones del Artista
                   const Text(
-                    '🎵 Canciones del Artista',
+                    'Canciones del Artista',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -575,11 +576,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Text('🎥', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.video_library, color: Colors.red, size: 16);
       case 'spotify':
-        return const Text('🎵', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
       case 'soundcloud':
-        return const Text('☁️', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16);
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }

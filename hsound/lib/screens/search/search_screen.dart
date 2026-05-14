@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hsound/firestore_service.dart';
-import 'package:hsound/artist_profile_screen.dart';
+import 'package:hsound/services/firestore_service.dart';
+import 'package:hsound/screens/profile/artist_profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -18,6 +18,7 @@ class _SearchScreenState extends State<SearchScreen> {
   String _selectedGenre = 'Todos';
   String _sortBy = 'title';
   bool _searchingSongs = true;
+  bool _useSimpleSearch = false;
   
   final List<String> _genres = [
   'Todos',
@@ -145,11 +146,11 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             child: Row(
               children: [
-                // Botón Canciones
                 GestureDetector(
                   onTap: () {
                     setState(() {
                       _searchingSongs = true;
+                      _useSimpleSearch = false;
                       _clearSearch();
                     });
                   },
@@ -185,11 +186,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ),
-                // Botón Artistas
                 GestureDetector(
                   onTap: () {
                     setState(() {
                       _searchingSongs = false;
+                      _useSimpleSearch = false;
                       _clearSearch();
                     });
                   },
@@ -231,9 +232,7 @@ class _SearchScreenState extends State<SearchScreen> {
           
           const Spacer(),
           
-          // Filtros adicionales solo para canciones
           if (_searchingSongs) ...[
-            // Dropdown de ordenamiento
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
@@ -248,13 +247,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 underline: const SizedBox(),
                 icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4ADE80)),
                 items: const [
-                  DropdownMenuItem(value: 'title', child: Text('Título')),
+                  DropdownMenuItem(value: 'title', child: Text('Titulo')),
                   DropdownMenuItem(value: 'popularity', child: Text('Popular')),
                   DropdownMenuItem(value: 'date', child: Text('Reciente')),
                 ],
                 onChanged: (value) {
                   setState(() {
                     _sortBy = value!;
+                    _useSimpleSearch = false;
                   });
                 },
               ),
@@ -308,6 +308,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onSelected: (selected) {
                       setState(() {
                         _selectedGenre = genre;
+                        _useSimpleSearch = false;
                       });
                     },
                   ),
@@ -353,11 +354,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSongResults() {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestoreService.searchSongs(
-        query: _searchQuery,
-        genre: _selectedGenre == 'Todos' ? null : _selectedGenre,
-        sortBy: _sortBy,
-      ),
+      stream: _useSimpleSearch
+          ? _firestoreService.searchSongs(
+              query: _searchQuery,
+              genre: null,
+              sortBy: 'title',
+            )
+          : _firestoreService.searchSongs(
+              query: _searchQuery,
+              genre: _selectedGenre == 'Todos' ? null : _selectedGenre,
+              sortBy: _sortBy,
+            ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF4ADE80)));
@@ -557,22 +564,26 @@ class _SearchScreenState extends State<SearchScreen> {
           const Icon(Icons.search_off, color: Colors.orange, size: 60),
           const SizedBox(height: 16),
           const Text(
-            'Búsqueda limitada temporalmente',
+            'Busqueda limitada temporalmente',
             style: TextStyle(color: Colors.white, fontSize: 16),
           ),
           const SizedBox(height: 8),
           Text(
-            'Usando búsqueda básica',
+            'Usando busqueda basica',
             style: TextStyle(color: Colors.grey[400], fontSize: 14),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () => setState(() {}),
+            onPressed: () {
+              setState(() {
+                _useSimpleSearch = true;
+              });
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4ADE80),
               foregroundColor: const Color(0xFF1E1E1E),
             ),
-            child: const Text('Reintentar Búsqueda'),
+            child: const Text('Reintentar Busqueda'),
           ),
         ],
       ),
@@ -604,11 +615,11 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Text('🎥', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.video_library, color: Colors.red, size: 16);
       case 'spotify':
-        return const Text('🎵', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
       case 'soundcloud':
-        return const Text('☁️', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16);
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }

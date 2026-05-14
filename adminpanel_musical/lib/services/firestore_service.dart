@@ -39,15 +39,13 @@ class FirestoreService {
     }
   }
 
-  // Obtener todos los usuarios
   Stream<QuerySnapshot> getAllUsers() {
     return _firestore
         .collection('users')
-        .orderBy('createdAt', descending: true)
+        .orderBy('name')
         .snapshots();
   }
 
-  // Obtener usuarios recientes
   Stream<QuerySnapshot> getRecentUsers({int limit = 5}) {
     return _firestore
         .collection('users')
@@ -81,20 +79,18 @@ class FirestoreService {
     });
   }
 
-  // Convertir usuario a artista
   Future<void> makeUserArtist(String userId) async {
-    await _firestore.collection('users').doc(userId).update({
+    await _firestore.collection('users').doc(userId).set({
       'isArtist': true,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
-  // Convertir artista a usuario normal
   Future<void> removeArtistRole(String userId) async {
-    await _firestore.collection('users').doc(userId).update({
+    await _firestore.collection('users').doc(userId).set({
       'isArtist': false,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
   // Eliminar usuario

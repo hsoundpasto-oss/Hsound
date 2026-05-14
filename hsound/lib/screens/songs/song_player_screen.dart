@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:hsound/share_service.dart';
+import 'package:hsound/services/share_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SongPlayerScreen extends StatefulWidget {
@@ -34,20 +34,20 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
   }
 
   void _debugPlatformInfo() {
-    print('🎵 ═══════════════════════════════════════');
-    print('🎵 HSOUND PLAYER DEBUG');
-    print('🎵 ═══════════════════════════════════════');
-    print('📱 Platform: ${widget.platform}');
-    print('🔗 Original URL: ${widget.songUrl}');
+    print('═══════════════════════════════════════');
+    print('HSOUND PLAYER DEBUG');
+    print('═══════════════════════════════════════');
+    print('Platform: ${widget.platform}');
+    print('Original URL: ${widget.songUrl}');
 
     if (widget.platform == 'spotify') {
       final trackId = _extractSpotifyTrackId(widget.songUrl);
       final embedUrl = _getSpotifyEmbedUrl();
-      print('🎵 Spotify Track ID: $trackId');
-      print('🎵 Spotify Embed URL: $embedUrl');
+      print('Spotify Track ID: $trackId');
+      print('Spotify Embed URL: $embedUrl');
     }
 
-    print('🎵 ═══════════════════════════════════════\n');
+    print('═══════════════════════════════════════\n');
   }
 
   String _getPlatformEmbedUrl() {
@@ -83,14 +83,14 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
     final trackId = _extractSpotifyTrackId(widget.songUrl);
 
     if (trackId.isEmpty) {
-      print('❌ No se pudo extraer Spotify Track ID');
+      print('No se pudo extraer Spotify Track ID');
       return widget.songUrl;
     }
 
     final embedUrl =
         'https://open.spotify.com/embed/track/$trackId?utm_source=generator&theme=0';
 
-    print('✅ Spotify Embed generado: $embedUrl');
+    print('Spotify Embed generado: $embedUrl');
     return embedUrl;
   }
 
@@ -125,21 +125,20 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
 
       return '';
     } catch (e) {
-      print('❌ Error extrayendo YouTube ID: $e');
+      print('Error extrayendo YouTube ID: $e');
       return '';
     }
   }
 
   String _extractSpotifyTrackId(String url) {
     try {
-      print('🔍 Extrayendo Spotify ID de: $url');
+      print('Extrayendo Spotify ID de: $url');
 
       String cleanUrl = url.split('?').first;
-      print('🔍 URL limpia: $cleanUrl');
+      print('URL limpia: $cleanUrl');
 
-      // Remover /intl-XX/
       cleanUrl = cleanUrl.replaceAll(RegExp(r'/intl-[a-z]{2}/'), '/');
-      print('🔍 URL sin intl: $cleanUrl');
+      print('URL sin intl: $cleanUrl');
 
       if (cleanUrl.contains('spotify.com/track/')) {
         final parts = cleanUrl.split('track/');
@@ -154,7 +153,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
               .trim();
 
           if (trackId.isNotEmpty && trackId.length > 10) {
-            print('✅ Track ID extraído: $trackId');
+            print('Track ID extraido: $trackId');
             return trackId;
           }
         }
@@ -166,15 +165,15 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
       if (match != null && match.groupCount >= 1) {
         final trackId = match.group(1) ?? '';
         if (trackId.isNotEmpty) {
-          print('✅ Track ID extraído (RegExp): $trackId');
+          print('Track ID extraido (RegExp): $trackId');
           return trackId;
         }
       }
 
-      print('❌ No se pudo extraer Track ID');
+      print('No se pudo extraer Track ID');
       return '';
     } catch (e) {
-      print('❌ Error extrayendo Spotify ID: $e');
+      print('Error extrayendo Spotify ID: $e');
       return '';
     }
   }
@@ -248,7 +247,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            '✅ Canción compartida + App',
+            'Cancion compartida + App',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           backgroundColor: const Color(0xFF15803D),
@@ -256,11 +255,10 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
         ),
       );
     } catch (e) {
-      // 🎯 MOSTRAR MENSAJE DE ERROR MEJORADO
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '❌ Error al compartir: $e',
+            'Error al compartir: $e',
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold),
           ),
@@ -492,7 +490,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
           ),
           onWebViewCreated: (controller) {
             webViewController = controller;
-            print('✅ WebView creado');
+            print('WebView creado');
           },
           shouldOverrideUrlLoading: (controller, navigationAction) async {
             final url = navigationAction.request.url.toString();
@@ -500,7 +498,7 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
             if (url.startsWith('intent://') ||
                 url.startsWith('spotify:') ||
                 url.startsWith('market://')) {
-              print('🚫 Bloqueado: $url');
+              print('Bloqueado: $url');
               return NavigationActionPolicy.CANCEL;
             }
 
@@ -646,13 +644,13 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Text('🎥', style: TextStyle(fontSize: 20));
+        return const Icon(Icons.video_library, color: Colors.red, size: 20);
       case 'spotify':
-        return const Text('🎵', style: TextStyle(fontSize: 20));
+        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 20);
       case 'soundcloud':
-        return const Text('☁️', style: TextStyle(fontSize: 20));
+        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 20);
       case 'youtube_music':
-        return const Text('🎶', style: TextStyle(fontSize: 20));
+        return const Icon(Icons.library_music, color: Colors.red, size: 20);
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 24);
     }

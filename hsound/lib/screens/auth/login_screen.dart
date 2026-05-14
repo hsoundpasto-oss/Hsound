@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hsound/firestore_service.dart';
+import 'package:hsound/services/firestore_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,16 +35,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userCredential.user != null) {
         // ✅ CREAR/ACTUALIZAR PERFIL EN FIRESTORE
         final firestoreService = FirestoreService();
+        final userEmail = userCredential.user!.email;
         await firestoreService.saveUserProfile({
           'name': userCredential.user!.displayName ?? 
                   userCredential.user!.email?.split('@')[0] ?? 'Usuario',
+          'email': userEmail,
         });
 
         print('Login exitoso: ${userCredential.user!.email}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('¡Bienvenido ${userCredential.user!.email}!'),
+            content: Text('Bienvenido ${userCredential.user!.email}!'),
             backgroundColor: const Color(0xFF4ADE80),
           ),
         );
@@ -88,8 +90,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (userCredential.user != null) {
       // ✅ CREAR/ACTUALIZAR PERFIL EN FIRESTORE
       final firestoreService = FirestoreService();
+      final userEmail = userCredential.user!.email;
       await firestoreService.saveUserProfile({
         'name': googleUser.displayName ?? userCredential.user!.displayName ?? 'Usuario',
+        'email': userEmail,
       });
 
       print('Login con Google exitoso: ${userCredential.user!.email}');

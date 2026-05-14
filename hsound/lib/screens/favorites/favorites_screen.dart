@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hsound/firestore_service.dart';
+import 'package:hsound/services/firestore_service.dart';
 import 'package:hsound/models/song_model.dart';
-import 'package:hsound/share_service.dart';
+import 'package:hsound/services/share_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -16,19 +16,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final User? user = FirebaseAuth.instance.currentUser;
 
-// ✅ ESTO ESTÁ BIEN (sin songUrl):
 void _shareSong(String title, String artist) async {
   try {
     await ShareService.shareSong(
       songTitle: title,
       artistName: artist,
-      // 🎯 ELIMINADO: songUrl
     );
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text(
-          '✅ Canción compartida + App',
+          'Cancion compartida + App',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF15803D),
@@ -39,24 +37,24 @@ void _shareSong(String title, String artist) async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '❌ Error al compartir: $e',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          'Error al compartir: $e',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.red[700],
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
-}
+  }
 
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Text('🎥', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.video_library, color: Colors.red, size: 16);
       case 'spotify':
-        return const Text('🎵', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
       case 'deezer':
-        return const Text('🔊', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.audiotrack, color: Color(0xFFFF0000), size: 16);
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }

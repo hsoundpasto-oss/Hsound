@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hsound/share_service.dart';
-import 'package:hsound/firestore_service.dart';
-import 'package:hsound/search_screen.dart';
-import 'package:hsound/favorites_screen.dart'; 
-import 'package:hsound/profile_screen.dart';
+import 'package:hsound/services/share_service.dart';
+import 'package:hsound/services/firestore_service.dart';
+import 'package:hsound/screens/search/search_screen.dart';
+import 'package:hsound/screens/favorites/favorites_screen.dart';
+import 'package:hsound/screens/profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -403,19 +403,19 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, snapshot) {
                 final isLiked = snapshot.data ?? false;
                 
-                return IconButton(
-                  onPressed: () async {
-                    try {
-                      await _firestoreService.toggleLike(songId);
-                      _showSuccessSnackBar(
-                        isLiked 
-                          ? '❌ Removido de favoritos' 
-                          : '❤️ Agregado a favoritos'
-                      );
-                    } catch (e) {
-                      _showErrorSnackBar('Error: $e');
-                    }
-                  },
+                    return IconButton(
+                      onPressed: () async {
+                        try {
+                          await _firestoreService.toggleLike(songId);
+                          _showSuccessSnackBar(
+                            isLiked 
+                              ? 'Removido de favoritos' 
+                              : 'Agregado a favoritos'
+                          );
+                        } catch (e) {
+                          _showErrorSnackBar('Error: $e');
+                        }
+                      },
                   icon: Icon(
                     isLiked ? Icons.favorite : Icons.favorite_border,
                     color: isLiked ? Colors.red : Colors.grey,
@@ -440,17 +440,17 @@ class _HomeScreenState extends State<HomeScreen> {
       songTitle: title,
       artistName: artist,
     );
-    _showSuccessSnackBar('✅ Canción compartida + App');
+    _showSuccessSnackBar('Cancion compartida + App');
   } catch (e) {
-    _showErrorSnackBar('❌ Error al compartir: $e');
+    _showErrorSnackBar('Error al compartir: $e');
   }
 }
 
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
-      case 'youtube': return const Text('🎥', style: TextStyle(fontSize: 16));
-      case 'spotify': return const Text('🎵', style: TextStyle(fontSize: 16));
-      case 'soundcloud': return const Text('☁️', style: TextStyle(fontSize: 16));
+      case 'youtube': return const Icon(Icons.video_library, color: Colors.red, size: 16);
+      case 'spotify': return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
+      case 'soundcloud': return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16);
       default: return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }
   }

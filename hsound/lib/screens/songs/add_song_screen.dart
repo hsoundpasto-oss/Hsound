@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hsound/firestore_service.dart';
-import '../models/song_model.dart';
+import 'package:hsound/services/firestore_service.dart';
+import '../../models/song_model.dart';
 
 class AddSongScreen extends StatefulWidget {
   const AddSongScreen({super.key});
@@ -26,13 +26,12 @@ class _AddSongScreenState extends State<AddSongScreen> {
   bool _isLoading = false;
   String? _artistName;
 
-  // 🎯 MODIFICADO: Lista de plataformas disponibles (sin Deezer)
-  final List<Map<String, String>> _platforms = [
-    {'value': 'youtube', 'label': 'YouTube', 'icon': '🎥'},
-    {'value': 'spotify', 'label': 'Spotify', 'icon': '🎵'},
-    {'value': 'youtube_music', 'label': 'YouTube Music', 'icon': '🎶'},
-    {'value': 'soundcloud', 'label': 'SoundCloud', 'icon': '☁️'},
-    {'value': 'other', 'label': 'Otra plataforma', 'icon': '🔗'},
+  final List<Map<String, dynamic>> _platforms = [
+    {'value': 'youtube', 'label': 'YouTube', 'icon': Icons.video_library, 'color': Colors.red},
+    {'value': 'spotify', 'label': 'Spotify', 'icon': Icons.music_note, 'color': const Color(0xFF1DB954)},
+    {'value': 'youtube_music', 'label': 'YouTube Music', 'icon': Icons.library_music, 'color': Colors.red},
+    {'value': 'soundcloud', 'label': 'SoundCloud', 'icon': Icons.cloud, 'color': const Color(0xFFFF7700)},
+    {'value': 'other', 'label': 'Otra plataforma', 'icon': Icons.link, 'color': Colors.grey},
   ];
 
   // 🎯 MODIFICADO: Lista de géneros musicales (con Trap)
@@ -174,15 +173,12 @@ class _AddSongScreenState extends State<AddSongScreen> {
           // Guardar en Firestore
           await _firestoreService.saveSong(song);
 
-          // 🎯 MEJORADO: Mensaje de éxito
-          _showSuccessSnackBar('✅ Canción agregada exitosamente!');
+          _showSuccessSnackBar('Cancion agregada exitosamente!');
 
-          // Regresar a la pantalla anterior
           Navigator.pop(context);
         }
       } catch (e) {
-        // 🎯 MEJORADO: Mensaje de error
-        _showErrorSnackBar('❌ Error al guardar: $e');
+        _showErrorSnackBar('Error al guardar: $e');
       } finally {
         setState(() {
           _isLoading = false;
@@ -221,8 +217,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
         }
 
         if (videoId != null && videoId.isNotEmpty) {
-          // 🎯 MEJORADO: Mensaje informativo
-          _showInfoSnackBar('🎥 YouTube: Reproducción embebida disponible');
+          _showInfoSnackBar('YouTube: Reproduccion embebida disponible');
         } else {
           return 'No se pudo detectar el ID del video de YouTube';
         }
@@ -240,30 +235,27 @@ class _AddSongScreenState extends State<AddSongScreen> {
         }
 
         // 🎯 MEJORADO: Mensaje informativo
-        _showInfoSnackBar('🎵 Spotify: Widget oficial disponible');
+        _showInfoSnackBar('Spotify: Widget oficial disponible');
         break;
 
       case 'soundcloud':
         if (!value.contains('soundcloud.com')) {
-          return 'URL de SoundCloud no válida';
+          return 'URL de SoundCloud no valida';
         }
 
-        // 🎯 MEJORADO: Mensaje más claro para SoundCloud
-        _showInfoSnackBar('☁️ SoundCloud: Se reproducirá en la app');
+        _showInfoSnackBar('SoundCloud: Se reproducira en la app');
         break;
 
       case 'youtube_music':
         if (!value.contains('music.youtube.com')) {
-          return 'URL de YouTube Music no válida';
+          return 'URL de YouTube Music no valida';
         }
 
-        // YouTube Music usa el mismo sistema que YouTube normal
-        _showInfoSnackBar('🎶 YouTube Music: Reproducción embebida disponible');
+        _showInfoSnackBar('YouTube Music: Reproduccion embebida disponible');
         break;
 
       default:
-        // Para otras plataformas
-        _showWarningSnackBar('🔗 Otra plataforma: Se intentará reproducción embebida');
+        _showWarningSnackBar('Otra plataforma: Se intentara reproduccion embebida');
         break;
     }
 
@@ -276,8 +268,9 @@ class _AddSongScreenState extends State<AddSongScreen> {
       backgroundColor: const Color(0xFF212121),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
+        iconTheme: const IconThemeData(color: Color(0xFF4ADE80)),
         title: const Text(
-          'Agregar Canción',
+          'Agregar Cancion',
           style: TextStyle(color: Color(0xFF4ADE80)),
         ),
         actions: [
@@ -560,12 +553,12 @@ class _AddSongScreenState extends State<AddSongScreen> {
         style: const TextStyle(color: Colors.white),
         items: _platforms.map((platform) {
           return DropdownMenuItem(
-            value: platform['value'],
+            value: platform['value'] as String,
             child: Row(
               children: [
-                Text(platform['icon']!),
+                Icon(platform['icon'] as IconData, color: platform['color'] as Color, size: 16),
                 const SizedBox(width: 10),
-                Text(platform['label']!),
+                Text(platform['label'] as String),
               ],
             ),
           );

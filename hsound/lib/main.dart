@@ -1,18 +1,14 @@
-import 'package:flutter/material.dart'; // Flutter UI
-import 'package:firebase_core/firebase_core.dart'; // Inicialización de Firebase
-import 'package:hsound/add_song_screen.dart'; // Importa la pantalla para agregar canciones
-import 'package:hsound/edit_profile_screen.dart'; // Importa la pantalla de edición de perfil
-import 'package:hsound/favorites_screen.dart';
-
-import 'package:hsound/song_player_screen.dart'; // Importa la pantalla del reproductor de canciones
-import 'firebase_options.dart'; // Configuración de Firebase
-import 'login_screen.dart'; // Importa la pantalla de login
-import 'register_screen.dart'; // Importa la pantalla de registro
-import 'home_screen.dart'; // Importa la pantalla principal post login (HomeScreen)
-import 'splash_screen.dart'; // Importa la pantalla de splash
-import 'profile_screen.dart'; // Importa la pantalla de perfil
-import 'search_screen.dart'; // Importa la pantalla de búsqueda
-import 'package:hsound/artist_profile_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:hsound/screens/songs/add_song_screen.dart';
+import 'package:hsound/screens/profile/edit_profile_screen.dart';
+import 'package:hsound/screens/songs/song_player_screen.dart';
+import 'package:hsound/screens/home/home_screen.dart';
+import 'package:hsound/screens/profile/artist_profile_screen.dart';
+import 'firebase_options.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,7 +29,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
 
-      // 🎯 CORREGIDO: Nuevo sistema de rutas
+      // CORREGIDO: Nuevo sistema de rutas
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),

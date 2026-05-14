@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../services/firestore_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -26,33 +27,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       try {
-        final UserCredential userCredential = 
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
 
         if (userCredential.user != null) {
+          final firestoreService = FirestoreService();
+          final userEmail = userCredential.user!.email;
+          await firestoreService.saveUserProfile({
+            'name': userCredential.user!.displayName ??
+                userCredential.user!.email?.split('@')[0] ??
+                'Usuario',
+            'email': userEmail,
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('¡Usuario registrado exitosamente!'),
+              content: Text('Usuario registrado exitosamente!'),
               backgroundColor: Color(0xFF4ADE80),
             ),
           );
-          
-          Navigator.pop(context);
+
+          Navigator.pushReplacementNamed(context, '/home');
         }
       } on FirebaseAuthException catch (e) {
         String errorMessage = 'Error al registrar usuario';
-        
+
         if (e.code == 'weak-password') {
-          errorMessage = 'La contraseña es demasiado débil. Use al menos 6 caracteres.';
+          errorMessage =
+              'La contraseña es demasiado débil. Use al menos 6 caracteres.';
         } else if (e.code == 'email-already-in-use') {
           errorMessage = 'Ya existe una cuenta con este correo electrónico.';
         } else if (e.code == 'invalid-email') {
           errorMessage = 'El formato del correo electrónico no es válido.';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -93,7 +104,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication? googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser.authentication;
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
@@ -102,14 +114,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       // Once signed in, return the UserCredential
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       if (userCredential.user != null) {
-        print('Registro con Google exitoso: ${userCredential.user!.email}');
+        final firestoreService = FirestoreService();
+        final userEmail = userCredential.user!.email;
+        await firestoreService.saveUserProfile({
+          'name': googleUser.displayName ??
+              userCredential.user!.displayName ??
+              'Usuario',
+          'email': userEmail,
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('¡Bienvenido ${userCredential.user!.email}!'),
+            content: Text('Bienvenido ${userCredential.user!.email}!'),
             backgroundColor: const Color(0xFF4ADE80),
           ),
         );
@@ -189,18 +209,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: 30),
-                        
+
                         // Botón de Google (lo puse arriba para que sea más visible)
                         _isGoogleLoading
                             ? const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF4ADE80)),
                               )
                             : SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
                                   onPressed: _signInWithGoogle,
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: Colors.white,
                                     foregroundColor: Colors.black,
                                     shape: RoundedRectangleBorder(
@@ -240,7 +262,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
                                 'O',
                                 style: TextStyle(
@@ -258,24 +281,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Campo Email
                         TextFormField(
                           controller: _emailController,
                           decoration: InputDecoration(
                             labelText: 'Email',
-                            labelStyle: const TextStyle(color: Color(0xFFFFFFFF)),
+                            labelStyle:
+                                const TextStyle(color: Color(0xFFFFFFFF)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF4ADE80)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFF4ADE80)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF86EFAC)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFF86EFAC)),
                             ),
                             filled: true,
                             fillColor: Colors.transparent,
-                            prefixIcon: const Icon(Icons.email, color: Color(0xFFFFFFFF)),
+                            prefixIcon: const Icon(Icons.email,
+                                color: Color(0xFFFFFFFF)),
                           ),
                           style: const TextStyle(color: Color(0xFFFFFFFF)),
                           keyboardType: TextInputType.emailAddress,
@@ -290,29 +317,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Campo Contraseña
                         TextFormField(
                           controller: _passwordController,
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
-                            labelStyle: const TextStyle(color: Color(0xFFFFFFFF)),
+                            labelStyle:
+                                const TextStyle(color: Color(0xFFFFFFFF)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF4ADE80)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFF4ADE80)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF86EFAC)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFF86EFAC)),
                             ),
                             filled: true,
                             fillColor: Colors.transparent,
-                            prefixIcon: const Icon(Icons.lock, color: Color(0xFFFFFFFF)),
+                            prefixIcon: const Icon(Icons.lock,
+                                color: Color(0xFFFFFFFF)),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword 
-                                  ? Icons.visibility_off 
-                                  : Icons.visibility,
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                                 color: const Color(0xFFFFFFFF),
                               ),
                               onPressed: () {
@@ -335,34 +366,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Campo Confirmar Contraseña
                         TextFormField(
                           controller: _confirmPasswordController,
                           decoration: InputDecoration(
                             labelText: 'Confirmar Contraseña',
-                            labelStyle: const TextStyle(color: Color(0xFFFFFFFF)),
+                            labelStyle:
+                                const TextStyle(color: Color(0xFFFFFFFF)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF4ADE80)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFF4ADE80)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(color: Color(0xFF86EFAC)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFF86EFAC)),
                             ),
                             filled: true,
                             fillColor: Colors.transparent,
-                            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFFFFFF)),
+                            prefixIcon: const Icon(Icons.lock_outline,
+                                color: Color(0xFFFFFFFF)),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscureConfirmPassword 
-                                  ? Icons.visibility_off 
-                                  : Icons.visibility,
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
                                 color: const Color(0xFFFFFFFF),
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
                                 });
                               },
                             ),
@@ -380,18 +416,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 30),
-                        
+
                         // Botón de Registro
                         _isLoading
                             ? const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF4ADE80)),
                               )
                             : SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: _registerWithEmailAndPassword,
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: const Color(0xFF4ADE80),
                                     foregroundColor: const Color(0xFF1F2937),
                                     shape: RoundedRectangleBorder(
@@ -409,7 +447,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                         const SizedBox(height: 20),
-                        
+
                         // Enlace para volver al login
                         TextButton(
                           onPressed: () {

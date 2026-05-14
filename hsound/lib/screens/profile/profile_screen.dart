@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hsound/firestore_service.dart';
-import 'package:hsound/share_service.dart';
+import 'package:hsound/services/firestore_service.dart';
+import 'package:hsound/services/share_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -117,10 +117,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmDelete) {
       try {
         await _firestoreService.deleteSong(songId);
-        _showSuccessSnackBar('✅ Canción "$songTitle" eliminada');
-        setState(() {});
+        _showSuccessSnackBar('Cancion "$songTitle" eliminada');
       } catch (e) {
-        _showErrorSnackBar('❌ Error al eliminar: $e');
+        _showErrorSnackBar('Error al eliminar: $e');
       }
     }
   }
@@ -147,9 +146,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       artistName: artistName,
       bio: bio,
     );
-    _showSuccessSnackBar('✅ Perfil compartido + App');
+    _showSuccessSnackBar('Perfil compartido + App');
   } catch (e) {
-    _showErrorSnackBar('❌ Error al compartir: $e');
+    _showErrorSnackBar('Error al compartir: $e');
   }
 }
 
@@ -161,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return AlertDialog(
           backgroundColor: const Color(0xFF1E1E1E),
           title: const Text(
-            '🎵 ¿Quieres ser Artista en HSound?',
+            'Quieres ser Artista en HSound?',
             style: TextStyle(color: Color(0xFF4ADE80), fontSize: 18),
           ),
           content: SingleChildScrollView(
@@ -175,26 +174,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  '📋 Requisitos:',
+                  'Requisitos:',
                   style: TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildRequirementItem('• Ser artista activo en Pasto, Nariño'),
-                _buildRequirementItem('• Tener música original publicada'),
-                _buildRequirementItem('• Contar con redes sociales activas'),
-                _buildRequirementItem('• Comprometerse con la comunidad musical'),
+                _buildRequirementItem('- Ser artista activo en Pasto, Nariño'),
+                _buildRequirementItem('- Tener musica original publicada'),
+                _buildRequirementItem('- Contar con redes sociales activas'),
+                _buildRequirementItem('- Comprometerse con la comunidad musical'),
                 const SizedBox(height: 16),
                 const Text(
-                  '📞 Contáctanos:',
+                  'Contactanos:',
                   style: TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildContactItem('📧 Email:', 'esneydribarra1970@gmail.com'),
-                _buildContactItem('📱 WhatsApp:', '+57 323 2157962'),
-                _buildContactItem('👨‍💻 Desarrollador:', 'Esneyder Ibarra'),
+                _buildContactItem('Email:', 'hsoundpasto@gmail.com'),
+                _buildContactItem('Desarrollador:', 'soutesneydr / Esneydr Ibarra'),
+                _buildContactItem('Desarrolladora:', 'sofiaburbanob_ / Sofia Burbano'),
                 const SizedBox(height: 8),
                 const Text(
-                  'Envíanos tu información y enlaces a tu música para revisar tu perfil.',
+                  'Envianos tu informacion y enlaces a tu musica para revisar tu perfil.',
                   style: TextStyle(color: Colors.grey, fontSize: 12, fontStyle: FontStyle.italic),
                 ),
               ],
@@ -211,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _launchSocialUrl('mailto:esneydribarra1970@gmail.com?subject=Solicitud%20de%20Artista%20HSound&body=Hola,%20me%20interesa%20ser%20artista%20en%20HSound.%20Mi%20nombre%20es:%20%0A%0ARedes%20sociales:%20%0AMúsica%20publicada:%20%0A%0A¡Gracias!');
+                _launchSocialUrl('mailto:hsoundpasto@gmail.com?subject=Solicitud%20de%20Artista%20HSound&body=Hola,%20me%20interesa%20ser%20artista%20en%20HSound.%20Mi%20nombre%20es:%20%0A%0ARedes%20sociales:%20%0AM%FAsica%20publicada:%20%0A%0A%21Gracias%21');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4ADE80),
@@ -384,7 +383,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Text(
-                '🎵 ARTISTA VERIFICADO',
+                'ARTISTA VERIFICADO',
                 style: TextStyle(
                   color: Color(0xFF1E1E1E),
                   fontSize: 12,
@@ -426,7 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            '🎵 ¿Eres artista de Pasto?',
+            'Eres artista de Pasto?',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -462,16 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: const Text('Solicitar Verificación'),
           ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () {
-              _launchSocialUrl('https://wa.me/573232157962?text=Hola,%20me%20interesa%20ser%20artista%20en%20HSound');
-            },
-            child: const Text(
-              'O contactar por WhatsApp',
-              style: TextStyle(color: Color(0xFF4ADE80)),
-            ),
-          ),
+
         ],
       ),
     );
@@ -490,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '📱 Sígueme en:',
+            'Sigueme en:',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -583,7 +573,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '🎵 Mis Canciones',
+          'Mis Canciones',
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -836,17 +826,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Iconos por plataforma
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Text('🎥', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.video_library, color: Colors.red, size: 16);
       case 'spotify':
-        return const Text('🎵', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
       case 'soundcloud':
-        return const Text('☁️', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16);
       case 'youtube_music':
-        return const Text('🎶', style: TextStyle(fontSize: 16));
+        return const Icon(Icons.library_music, color: Colors.red, size: 16);
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }

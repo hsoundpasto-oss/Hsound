@@ -6,34 +6,39 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Guardar perfil de usuario
-  // En firestore_service.dart - CORREGIR este método:
-Future<void> saveUserProfile(Map<String, dynamic> profileData) async {
+  Future<void> saveUserProfile(Map<String, dynamic> profileData) async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) throw Exception('Usuario no autenticado');
-  
+
   final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-  
-  // 🎯 CORREGIDO: Verificar si el usuario ya existe y preservar datos
+
+  profileData['email'] = user.email;
+
   final existingUser = await userRef.get();
-  
+
   if (existingUser.exists) {
     final existingData = existingUser.data()!;
-    
-    // 🎯 PRESERVAR el nombre existente si ya hay uno
+
     if (existingData['name'] != null && existingData['name'].isNotEmpty) {
       profileData['name'] = existingData['name'];
     }
-    
-    // 🎯 PRESERVAR isArtist si ya está establecido
+
     if (existingData['isArtist'] != null) {
       profileData['isArtist'] = existingData['isArtist'];
     }
-    
-    print('📝 Usuario existente: ${existingData['email']}, actualizando perfil preservando datos...');
+
+    if (existingData['createdAt'] == null) {
+      profileData['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    profileData['updatedAt'] = FieldValue.serverTimestamp();
     await userRef.update(profileData);
   } else {
-    print('🆕 Nuevo usuario, creando perfil...');
+    profileData['createdAt'] = FieldValue.serverTimestamp();
+    profileData['updatedAt'] = FieldValue.serverTimestamp();
+    profileData['isArtist'] = false;
+    final name = profileData['name'] as String? ?? '';
+    profileData['searchKeywords'] = createSearchKeywords(name);
     await userRef.set(profileData);
   }
 }
@@ -121,76 +126,59 @@ Future<void> saveUserProfile(Map<String, dynamic> profileData) async {
     }
   }
 
-  // ✅ CORREGIDA: Búsqueda avanzada de canciones (VERSIÓN CON MANEJO DE ERRORES)
   Stream<QuerySnapshot> searchSongs({
     required String query,
     String? genre,
-    String? sortBy, // 'popularity', 'date', 'title'
+    String? sortBy,
     int limit = 20,
   }) {
-    try {
-      Query searchQuery = _firestore.collection('songs');
+    Query searchQuery = _firestore.collection('songs');
 
-      // Búsqueda por texto
-      if (query.isNotEmpty) {
-        final lowerQuery = query.toLowerCase();
-        searchQuery =
-            searchQuery.where('searchKeywords', arrayContains: lowerQuery);
-      }
-
-      // Filtro por género
-      if (genre != null && genre.isNotEmpty && genre != 'Todos') {
-        searchQuery = searchQuery.where('genre', isEqualTo: genre);
-      }
-
-      // Ordenamiento
-      switch (sortBy) {
-        case 'popularity':
-          searchQuery = searchQuery.orderBy('likes', descending: true);
-          break;
-        case 'date':
-          searchQuery = searchQuery.orderBy('createdAt', descending: true);
-          break;
-        case 'title':
-        default:
-          searchQuery = searchQuery.orderBy('title', descending: false);
-          break;
-      }
-
-      return searchQuery.limit(limit).snapshots();
-    } catch (e) {
-      // Usar búsqueda básica y filtrar en memoria
-      print('Índice no encontrado, usando búsqueda en memoria: $e');
-      return _fallbackSearch(
-          query: query, genre: genre, sortBy: sortBy, limit: limit);
+    if (query.isNotEmpty) {
+      final lowerQuery = query.toLowerCase();
+      searchQuery =
+          searchQuery.where('searchKeywords', arrayContains: lowerQuery);
     }
+
+    if (genre != null && genre.isNotEmpty && genre != 'Todos') {
+      searchQuery = searchQuery.where('genre', isEqualTo: genre);
+    }
+
+    switch (sortBy) {
+      case 'popularity':
+        searchQuery = searchQuery.orderBy('likes', descending: true);
+        break;
+      case 'date':
+        searchQuery = searchQuery.orderBy('createdAt', descending: true);
+        break;
+      case 'title':
+      default:
+        searchQuery = searchQuery.orderBy('title', descending: false);
+        break;
+    }
+
+    return searchQuery.limit(limit).snapshots().handleError((error) {
+      return _fallbackSearch(query: query, genre: genre, sortBy: sortBy, limit: limit);
+    });
   }
 
-  //  BÚSQUEDA DE RESPUESTA CUANDO FALTAN ÍNDICES
   Stream<QuerySnapshot> _fallbackSearch({
     required String query,
     String? genre,
     String? sortBy,
     int limit = 20,
   }) {
-    // Simplemente devolvemos una búsqueda básica que SÍ funciona
     Query searchQuery = _firestore.collection('songs');
 
-    // Solo búsqueda por texto (sin filtros complejos)
     if (query.isNotEmpty) {
       final lowerQuery = query.toLowerCase();
       searchQuery = searchQuery
-          .where('searchKeywords', arrayContains: lowerQuery)
-          .orderBy('title') // Ordenamiento simple que SÍ funciona
-          .limit(limit);
-    } else {
-      searchQuery = searchQuery.orderBy('title').limit(limit);
+          .where('searchKeywords', arrayContains: lowerQuery);
     }
 
-    return searchQuery.snapshots();
+    return searchQuery.limit(limit).snapshots();
   }
 
-  // Búsqueda de artistas
   Stream<QuerySnapshot> searchArtists({
     required String query,
     int limit = 10,
@@ -203,12 +191,12 @@ Future<void> saveUserProfile(Map<String, dynamic> profileData) async {
           .snapshots();
     }
 
+    final lowerQuery = query.toLowerCase();
+
     return _firestore
         .collection('users')
         .where('isArtist', isEqualTo: true)
-        .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThan: query + 'z')
-        .orderBy('name')
+        .where('searchKeywords', arrayContains: lowerQuery)
         .limit(limit)
         .snapshots();
   }
@@ -275,7 +263,7 @@ Future<void> saveUserProfile(Map<String, dynamic> profileData) async {
           'searchKeywords': searchKeywords,
         });
 
-        print('✅ Canción ${doc.id} actualizada con keywords');
+        print('Cancion ${doc.id} actualizada con keywords');
       }
     } catch (e) {
       print('Error actualizando keywords: $e');
@@ -296,11 +284,19 @@ Future<void> saveUserProfile(Map<String, dynamic> profileData) async {
     });
   }
 }
-  // Actualizar perfil de usuario
 Future<void> updateUserProfile(Map<String, dynamic> profileData) async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) throw Exception('Usuario no autenticado');
-  
+
+  if (user.email != null) {
+    profileData['email'] = user.email;
+  }
+
+  if (profileData.containsKey('name')) {
+    final name = profileData['name'] as String? ?? '';
+    profileData['searchKeywords'] = createSearchKeywords(name);
+  }
+
   await FirebaseFirestore.instance
       .collection('users')
       .doc(user.uid)
@@ -311,7 +307,7 @@ Future<void> updateUserProfile(Map<String, dynamic> profileData) async {
   Future<void> toggleLike(String songId) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      print('❌ Usuario no autenticado');
+      print('Usuario no autenticado');
       return;
     }
 
@@ -328,13 +324,11 @@ Future<void> updateUserProfile(Map<String, dynamic> profileData) async {
         final likeDoc = await transaction.get(likeRef);
 
         if (likeDoc.exists) {
-          // ❌ Like existe - lo eliminamos
-          print('🗑️ Eliminando like existente...');
+          print('Eliminando like existente...');
           transaction.delete(likeRef);
           transaction.update(songRef, {'likes': FieldValue.increment(-1)});
         } else {
-          // ❤️ Like no existe - lo creamos
-          print('❤️ Creando nuevo like...');
+          print('Creando nuevo like...');
           transaction.set(likeRef, {
             'userId': user.uid,
             'songId': songId,
@@ -344,17 +338,16 @@ Future<void> updateUserProfile(Map<String, dynamic> profileData) async {
         }
       });
 
-      print('✅ Operación de like completada exitosamente');
+      print('Operacion de like completada exitosamente');
     } catch (e) {
-      print('❌ Error en toggleLike: $e');
+      print('Error en toggleLike: $e');
 
-      // Manejo específico de errores
       if (e.toString().contains('PERMISSION_DENIED')) {
-        print('🔐 Error de permisos. Verifica las reglas de Firestore.');
+        print('Error de permisos. Verifica las reglas de Firestore.');
       } else if (e.toString().contains('NOT_FOUND')) {
-        print('📄 Documento no encontrado.');
+        print('Documento no encontrado.');
       } else {
-        print('🚨 Error desconocido.');
+        print('Error desconocido.');
       }
 
       rethrow;

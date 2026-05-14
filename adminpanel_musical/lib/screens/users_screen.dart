@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../services/firestore_service.dart';
 import '../utils/app_colors.dart';
 import 'package:intl/intl.dart';
@@ -143,6 +144,38 @@ class _UsersScreenState extends State<UsersScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _syncEmails() async {
+    try {
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('syncUserEmails')
+          .call();
+
+      final data = result.data as Map<String, dynamic>;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sincronización completada: ${data['updated']} emails actualizados, ${data['skipped']} omitidos',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } on FirebaseFunctionsException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.message}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error de conexión: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   // 🔹 MÉTODO NUEVO: Mostrar detalles del usuario
@@ -369,6 +402,18 @@ class _UsersScreenState extends State<UsersScreen> {
                       _selectedRoleFilter = value!;
                     });
                   },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.sync, color: AppColors.primary),
+                  tooltip: 'Sincronizar emails',
+                  onPressed: _syncEmails,
                 ),
               ),
             ],
