@@ -33,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
       if (userCredential.user != null) {
-        // ✅ CREAR/ACTUALIZAR PERFIL EN FIRESTORE
         final firestoreService = FirestoreService();
         final userEmail = userCredential.user!.email;
         await firestoreService.saveUserProfile({
@@ -42,8 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'email': userEmail,
         });
 
-        print('Login exitoso: ${userCredential.user!.email}');
-
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Bienvenido ${userCredential.user!.email}!'),
@@ -54,11 +52,33 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/home'); 
       }
     } on FirebaseAuthException catch (e) {
-      // ... manejo de errores existente
+      String errorMessage = 'Error al iniciar sesión';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'Usuario no encontrado. Verifica tu correo.';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Contraseña incorrecta. Intenta de nuevo.';
+      } else if (e.code == 'invalid-credential') {
+        errorMessage = 'Usuario no encontrado o contraseña incorrecta.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'El formato del correo no es válido.';
+      } else if (e.code == 'too-many-requests') {
+        errorMessage = 'Demasiados intentos. Intenta más tarde.';
+      } else if (e.code == 'user-disabled') {
+        errorMessage = 'Esta cuenta ha sido deshabilitada.';
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }
@@ -108,11 +128,19 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacementNamed(context, '/home');
     }
   } catch (e) {
-    // ... manejo de errores existente
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al iniciar sesión con Google: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
   } finally {
-    setState(() {
-      _isGoogleLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isGoogleLoading = false;
+      });
+    }
   }
 }
 

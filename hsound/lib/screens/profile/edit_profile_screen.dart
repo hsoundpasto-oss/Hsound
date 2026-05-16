@@ -228,13 +228,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         },
                       ),
                       
-                      // Campo biografía
                       _buildTextField(
                         controller: _bioController,
                         label: 'Biografía',
                         hintText: 'Cuéntanos sobre ti, tu música, inspiración...',
                         icon: Icons.description,
-                        maxLines: 4,
+                        maxLines: null,
                       ),
                       
                       // Solo para artistas: enlaces de música y redes
@@ -384,7 +383,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required String label,
     required String hintText,
     required IconData icon,
-    int maxLines = 1,
+    int? maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {

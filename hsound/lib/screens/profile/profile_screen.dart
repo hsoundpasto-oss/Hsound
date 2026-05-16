@@ -284,39 +284,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF4ADE80)))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tarjeta de información del usuario
-                  _buildUserInfoCard(),
-                  const SizedBox(height: 20),
+          : RefreshIndicator(
+              onRefresh: _loadUserData,
+              color: const Color(0xFF4ADE80),
+              backgroundColor: const Color(0xFF1E1E1E),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildUserInfoCard(),
+                    const SizedBox(height: 20),
 
-                  // Sección de enlaces sociales (solo para artistas)
-                  if (_isArtist && _hasSocialLinks())
-                    _buildSocialLinksSection(),
+                    if (_isArtist && _hasSocialLinks())
+                      _buildSocialLinksSection(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Solo para artistas: Sección de Mis Canciones
-                  if (_isArtist) 
-                    _buildArtistSongsSection(),
+                    if (_isArtist) 
+                      _buildArtistSongsSection(),
 
-                  // 🎯 MODIFICADO: Para usuarios normales - Sección de contacto
-                  if (!_isArtist) 
-                    _buildContactSection(),
+                    if (!_isArtist) 
+                      _buildContactSection(),
 
-                  // BOTÓN AGREGAR CANCIÓN (solo para artistas)
-                  if (_isArtist) 
-                    _buildAddSongButton(),
+                    if (_isArtist) 
+                      _buildAddSongButton(),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // BOTÓN CERRAR SESIÓN
-                  _buildLogoutButton(),
-                  const SizedBox(height: 20),
-                ],
+                    _buildLogoutButton(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
     );

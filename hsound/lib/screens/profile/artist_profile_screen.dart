@@ -154,13 +154,17 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF4ADE80)))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tarjeta de información del artista
-                  Container(
+          : RefreshIndicator(
+              onRefresh: _refreshData,
+              color: const Color(0xFF4ADE80),
+              backgroundColor: const Color(0xFF1E1E1E),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -282,7 +286,15 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                 ],
               ),
             ),
+          ),
     );
+  }
+
+  Future<void> _refreshData() async {
+    await Future.wait([
+      _loadArtistData(),
+      _loadArtistSongs(),
+    ]);
   }
 
   Widget _buildEmptySongsState() {
