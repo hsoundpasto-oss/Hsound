@@ -16,7 +16,6 @@ class Song {
   final List<String> searchKeywords; // Lista de palabras clave para búsqueda
   final bool isLiked; //CAMPO PARA ESTADO DE LIKE
 
-
   Song({
     required this.id,
     required this.title,
@@ -32,8 +31,6 @@ class Song {
     this.plays = 0,
     required this.searchKeywords, // inicializar en el constructor
     this.isLiked = false, // Valor por defecto
-
-
   });
 
   // Convertir de Firestore a objeto Song
@@ -52,7 +49,8 @@ class Song {
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       likes: data['likes'] ?? 0,
       plays: data['plays'] ?? 0,
-      searchKeywords: List<String>.from(data['searchKeywords'] ?? []), // manejar null
+      searchKeywords:
+          List<String>.from(data['searchKeywords'] ?? []), // manejar null
       isLiked: false, // Se actualizará después
     );
   }
@@ -74,7 +72,8 @@ class Song {
       'searchKeywords': searchKeywords, // incluir en el Map
     };
   }
-    // ✅ NUEVO: Método para actualizar el estado de like
+
+  // ✅ NUEVO: Método para actualizar el estado de like
   Song copyWith({bool? isLiked}) {
     return Song(
       id: id,
