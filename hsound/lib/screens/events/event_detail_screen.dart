@@ -188,7 +188,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       _buildInfoCard(
                         icon: Icons.place,
                         title: 'Lugar',
-                        content: '${_event!.venue}\n${_event!.address}',
+                        content: _event!.venue,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInfoCard(
+                        icon: Icons.map,
+                        title: 'Dirección',
+                        content: _event!.address,
                       ),
                       const SizedBox(height: 12),
                       _buildInfoCard(

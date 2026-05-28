@@ -22,8 +22,9 @@ class _EventsScreenState extends State<EventsScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _mapsUrlController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _artistIdController = TextEditingController();
   final TextEditingController _artistNameController = TextEditingController();
+  String _selectedArtistId = '';
+  String _selectedArtistName = '';
   final TextEditingController _priceAmountController = TextEditingController();
   final TextEditingController _priceCustomController = TextEditingController();
 
@@ -57,7 +58,6 @@ class _EventsScreenState extends State<EventsScreen> {
     _addressController.dispose();
     _mapsUrlController.dispose();
     _priceController.dispose();
-    _artistIdController.dispose();
     _artistNameController.dispose();
     _priceAmountController.dispose();
     _priceCustomController.dispose();
@@ -88,7 +88,7 @@ class _EventsScreenState extends State<EventsScreen> {
     Map<String, String> errors = {};
     void validateAndSetErrors() {
       final e = <String, String>{};
-      if (_artistIdController.text.trim().isEmpty) e['artistId'] = 'Campo requerido';
+      if (_selectedArtistId.isEmpty) e['artistId'] = 'Selecciona un artista';
       if (_artistNameController.text.trim().isEmpty) e['artistName'] = 'Campo requerido';
       if (_titleController.text.trim().isEmpty) e['title'] = 'Campo requerido';
       if (_venueController.text.trim().isEmpty) e['venue'] = 'Campo requerido';
@@ -109,16 +109,54 @@ class _EventsScreenState extends State<EventsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: _artistIdController,
-                  style: const TextStyle(color: AppColors.textPrimary),
-                  decoration: _inputDecoration('ID del Artista (UID)',
-                      error: errors['artistId']),
+                FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .where('isArtist', isEqualTo: true)
+                      .get(),
+                  builder: (context, snapshot) {
+                    final artists = (snapshot.data?.docs ?? []).toList()
+                      ..sort((a, b) {
+                        final na = ((a.data() as Map)['name'] ?? '').toString().toLowerCase();
+                        final nb = ((b.data() as Map)['name'] ?? '').toString().toLowerCase();
+                        return na.compareTo(nb);
+                      });
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    }
+                    return DropdownButtonFormField<String>(
+                      value: _selectedArtistId.isEmpty ? null : _selectedArtistId,
+                      dropdownColor: AppColors.surface,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: _inputDecoration('Artista',
+                          error: errors['artistId']),
+                      hint: const Text('Selecciona un artista',
+                          style: TextStyle(color: AppColors.textSecondary)),
+                      items: artists.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final name = data['name'] ?? 'Sin nombre';
+                        return DropdownMenuItem(
+                          value: doc.id,
+                          child: Text(name, style: const TextStyle(color: AppColors.textPrimary)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _selectedArtistId = value ?? '';
+                          final doc = artists.firstWhere((d) => d.id == value);
+                          final data = doc.data() as Map<String, dynamic>;
+                          _selectedArtistName = data['name'] ?? 'Artista';
+                          _artistNameController.text = _selectedArtistName;
+                        });
+                      },
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _artistNameController,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  enabled: false,
+                  style: TextStyle(color: AppColors.textSecondary),
                   decoration: _inputDecoration('Nombre del Artista',
                       error: errors['artistName']),
                 ),
@@ -214,8 +252,8 @@ class _EventsScreenState extends State<EventsScreen> {
 
                 try {
                   await _firestoreService.createEvent(
-                    artistId: _artistIdController.text.trim(),
-                    artistName: _artistNameController.text.trim(),
+                    artistId: _selectedArtistId,
+                    artistName: _selectedArtistName,
                     title: _titleController.text.trim(),
                     description: _descriptionController.text.trim().isEmpty
                         ? null
@@ -264,7 +302,8 @@ class _EventsScreenState extends State<EventsScreen> {
       _addressController.clear();
       _mapsUrlController.clear();
       _priceController.clear();
-      _artistIdController.clear();
+      _selectedArtistId = '';
+      _selectedArtistName = '';
       _artistNameController.clear();
     }
   }

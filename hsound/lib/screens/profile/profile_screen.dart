@@ -128,12 +128,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Función para abrir enlaces sociales
   Future<void> _launchSocialUrl(String url) async {
     try {
-      final Uri uri = Uri.parse(url);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        throw Exception('No se pudo abrir $url');
+      String normalized = url.trim();
+      if (normalized.isEmpty) return;
+      if (!normalized.startsWith('http://') && !normalized.startsWith('https://') && !normalized.startsWith('mailto:')) {
+        normalized = 'https://$normalized';
       }
+      final Uri uri = Uri.parse(normalized);
+      if (!uri.isAbsolute || (uri.scheme != 'http' && uri.scheme != 'https' && uri.scheme != 'mailto')) {
+        _showErrorSnackBar('Enlace no válido');
+        return;
+      }
+      if (!await canLaunchUrl(uri)) {
+        _showErrorSnackBar('No hay una aplicación instalada para abrir este enlace');
+        return;
+      }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      _showErrorSnackBar('Error al abrir enlace: $e');
+      _showErrorSnackBar('No se pudo abrir el enlace');
     }
   }
 
@@ -285,7 +296,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF4ADE80)))
-          : RefreshIndicator(
+          : _userData == null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, color: Color(0xFFFFA500), size: 64),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No se pudieron cargar tus datos',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Prueba cerrando sesión e iniciando de nuevo',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _showLogoutConfirmation,
+                          icon: const Icon(Icons.logout),
+                          label: const Text('Cerrar Sesión'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4ADE80),
+                            foregroundColor: const Color(0xFF1E1E1E),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
               onRefresh: _loadUserData,
               color: const Color(0xFF4ADE80),
               backgroundColor: const Color(0xFF1E1E1E),

@@ -183,28 +183,11 @@ class FirestoreService {
     return searchQuery.limit(limit).snapshots();
   }
 
-  Stream<QuerySnapshot> searchArtists({
-    required String query,
-    int limit = 10,
-    String? genre,
-    String? instrument,
-  }) {
-    Query queryRef = _firestore.collection('users').where('isArtist', isEqualTo: true);
-
-    if (genre != null && genre.isNotEmpty) {
-      queryRef = queryRef.where('musicalGenre', isEqualTo: genre);
-    }
-
-    if (instrument != null && instrument.isNotEmpty) {
-      queryRef = queryRef.where('instruments', arrayContains: instrument);
-    }
-
-    if (query.isNotEmpty) {
-      final lowerQuery = query.toLowerCase();
-      queryRef = queryRef.where('searchKeywords', arrayContains: lowerQuery);
-    }
-
-    return queryRef.limit(limit).snapshots();
+  Stream<QuerySnapshot> getAllArtists() {
+    return _firestore
+        .collection('users')
+        .where('isArtist', isEqualTo: true)
+        .snapshots();
   }
 
   // Obtener géneros únicos para filtros

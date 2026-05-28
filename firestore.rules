@@ -10,12 +10,14 @@ service cloud.firestore {
         request.auth.token.email == 'sofia.burbanoba221@umariana.edu.co' ||
         request.auth.token.email == 'admin@hsound.com' ||
         request.auth.token.email == 'admin@musical.com' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
       );
     }
 
     function isArtist() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isArtist == true;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isArtist == true;
     }
 
     match /users/{userId} {

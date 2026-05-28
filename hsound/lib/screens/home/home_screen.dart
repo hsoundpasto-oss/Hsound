@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,12 +27,48 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [];
   bool _isInitialized = false;
+  StreamSubscription<DocumentSnapshot>? _userStream;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _setInitialName();
+    _listenUserChanges();
     _initializePages();
+  }
+
+  @override
+  void dispose() {
+    _userStream?.cancel();
+    super.dispose();
+  }
+
+  void _setInitialName() {
+    if (user != null) {
+      _displayName = user!.email ?? 'Usuario';
+    }
+  }
+
+  void _listenUserChanges() {
+    if (user == null) return;
+    _userStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final name = data['name']?.toString();
+        if (name != null && name.isNotEmpty) {
+          setState(() => _displayName = name);
+        }
+        final photo = data['photoUrl']?.toString();
+        if (photo != null && photo.isNotEmpty) {
+          setState(() => _photoUrl = photo);
+        }
+      }
+    });
   }
 
   void _initializePages() {
@@ -45,31 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _isInitialized = true;
       });
     });
-  }
-
-  void _loadUserData() async {
-    if (user != null) {
-      // Fallback inmediato con email
-      setState(() => _displayName = user!.email ?? 'Usuario');
-      try {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user!.uid)
-            .get()
-            .timeout(const Duration(seconds: 3));
-        if (userDoc.exists) {
-          final data = userDoc.data() as Map<String, dynamic>;
-          final name = data['name']?.toString();
-          if (name != null && name.isNotEmpty) {
-            setState(() => _displayName = name);
-          }
-          final photo = data['photoUrl']?.toString();
-          if (photo != null && photo.isNotEmpty) {
-            setState(() => _photoUrl = photo);
-          }
-        }
-      } catch (_) {}
-    }
   }
 
   // 🎯 Alertas mejoradas

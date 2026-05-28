@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -237,6 +238,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         },
                       ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => _resetPassword(_emailController.text.trim()),
+                        child: const Text(
+                          '¿Olvidaste tu contraseña?',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                     ],
                   ),
@@ -247,5 +259,32 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  void _resetPassword(String email) {
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ingresa tu email primero'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    FirebaseAuth.instance.sendPasswordResetEmail(email: email).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Correo de restablecimiento enviado a $email'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }).catchError((e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    });
   }
 }

@@ -158,183 +158,188 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildFilters() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
       color: const Color(0xFF1E1E1E),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF2D2D2D),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _searchTab = 'songs';
-                      _clearSearch();
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _searchTab == 'songs'
-                          ? const Color(0xFF4ADE80) 
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.music_note,
-                          color: _searchTab == 'songs'
-                              ? const Color(0xFF1E1E1E) 
-                              : Colors.grey,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Canciones',
-                          style: TextStyle(
-                            color: _searchTab == 'songs'
-                                ? const Color(0xFF1E1E1E) 
-                                : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _searchTab = 'events';
-                      _clearSearch();
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _searchTab == 'events'
-                          ? const Color(0xFF4ADE80) 
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.event_note,
-                          color: _searchTab == 'events'
-                              ? const Color(0xFF1E1E1E) 
-                              : Colors.grey,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Eventos',
-                          style: TextStyle(
-                            color: _searchTab == 'events'
-                                ? const Color(0xFF1E1E1E) 
-                                : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _searchTab = 'artists';
-                      _clearSearch();
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _searchTab == 'artists'
-                          ? const Color(0xFF4ADE80) 
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.person,
-                          color: _searchTab == 'artists'
-                              ? const Color(0xFF1E1E1E) 
-                              : Colors.grey,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Artistas',
-                          style: TextStyle(
-                            color: _searchTab == 'artists'
-                                ? const Color(0xFF1E1E1E) 
-                                : Colors.grey,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          if (_searchTab == 'artists')
-            IconButton(
-              icon: Icon(
-                _showArtistFilters ? Icons.filter_list_off : Icons.filter_list,
-                color: const Color(0xFF4ADE80),
-                size: 20,
-              ),
-              onPressed: () {
-                setState(() {
-                  _showArtistFilters = !_showArtistFilters;
-                });
-              },
-              tooltip: 'Filtrar artistas',
-            ),
-           
-           const Spacer(),
-           
-          if (_searchTab == 'songs') ...[
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFF2D2D2D),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF4ADE80)),
               ),
-              child: DropdownButton<String>(
-                value: _sortBy,
-                dropdownColor: const Color(0xFF1E1E1E),
-                style: const TextStyle(color: Colors.white, fontSize: 11),
-                underline: const SizedBox(),
-                icon: const Icon(Icons.swap_vert, color: Color(0xFF4ADE80), size: 16),
-                items: const [
-                  DropdownMenuItem(value: 'title', child: Text('Título', style: TextStyle(fontSize: 11))),
-                  DropdownMenuItem(value: 'popularity', child: Text('Popular', style: TextStyle(fontSize: 11))),
-                  DropdownMenuItem(value: 'date', child: Text('Reciente', style: TextStyle(fontSize: 11))),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _searchTab = 'songs';
+                        _clearSearch();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _searchTab == 'songs'
+                            ? const Color(0xFF4ADE80) 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.music_note,
+                            color: _searchTab == 'songs'
+                                ? const Color(0xFF1E1E1E) 
+                                : Colors.grey,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Canciones',
+                            style: TextStyle(
+                              color: _searchTab == 'songs'
+                                  ? const Color(0xFF1E1E1E) 
+                                  : Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _searchTab = 'events';
+                        _clearSearch();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _searchTab == 'events'
+                            ? const Color(0xFF4ADE80) 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.event_note,
+                            color: _searchTab == 'events'
+                                ? const Color(0xFF1E1E1E) 
+                                : Colors.grey,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Eventos',
+                            style: TextStyle(
+                              color: _searchTab == 'events'
+                                  ? const Color(0xFF1E1E1E) 
+                                  : Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _searchTab = 'artists';
+                        _clearSearch();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _searchTab == 'artists'
+                            ? const Color(0xFF4ADE80) 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person,
+                            color: _searchTab == 'artists'
+                                ? const Color(0xFF1E1E1E) 
+                                : Colors.grey,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Artistas',
+                            style: TextStyle(
+                              color: _searchTab == 'artists'
+                                  ? const Color(0xFF1E1E1E) 
+                                  : Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _sortBy = value!;
-                  });
-                },
               ),
             ),
+            
+            if (_searchTab == 'artists')
+              IconButton(
+                icon: Icon(
+                  _showArtistFilters ? Icons.filter_list_off : Icons.filter_list,
+                  color: const Color(0xFF4ADE80),
+                  size: 18,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _showArtistFilters = !_showArtistFilters;
+                  });
+                },
+                tooltip: 'Filtrar artistas',
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+             
+            const SizedBox(width: 8),
+             
+            if (_searchTab == 'songs') ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2D2D2D),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF4ADE80)),
+                ),
+                child: DropdownButton<String>(
+                  value: _sortBy,
+                  dropdownColor: const Color(0xFF1E1E1E),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.swap_vert, color: Color(0xFF4ADE80), size: 14),
+                  items: const [
+                    DropdownMenuItem(value: 'title', child: Text('Título', style: TextStyle(fontSize: 11))),
+                    DropdownMenuItem(value: 'popularity', child: Text('Popular', style: TextStyle(fontSize: 11))),
+                    DropdownMenuItem(value: 'date', child: Text('Reciente', style: TextStyle(fontSize: 11))),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _sortBy = value!;
+                    });
+                  },
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -677,14 +682,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildArtistResults() {
-    final genreFilter = _artistGenre == 'Todos' ? null : _artistGenre;
-    final instrumentFilter = _selectedInstrument == 'Todos' ? null : _selectedInstrument;
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestoreService.searchArtists(
-        query: _searchQuery,
-        genre: genreFilter,
-        instrument: instrumentFilter,
-      ),
+      stream: _firestoreService.getAllArtists(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF4ADE80)));
@@ -694,11 +693,43 @@ class _SearchScreenState extends State<SearchScreen> {
           return _buildErrorState('Error: ${snapshot.error}');
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        final allArtists = snapshot.data?.docs ?? [];
+
+        if (allArtists.isEmpty) {
           return _buildNoResults();
         }
 
-        return _buildGroupedArtistList(snapshot.data!.docs);
+        List<QueryDocumentSnapshot> artists = allArtists.toList();
+
+        if (_searchQuery.isNotEmpty) {
+          final lowerQuery = _searchQuery.toLowerCase();
+          artists = artists.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final name = (data['name'] ?? '').toString().toLowerCase();
+            return name.contains(lowerQuery);
+          }).toList();
+        }
+
+        if (_artistGenre != 'Todos') {
+          artists = artists.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['musicalGenre'] == _artistGenre;
+          }).toList();
+        }
+
+        if (_selectedInstrument != 'Todos') {
+          artists = artists.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final instruments = (data['instruments'] as List?) ?? [];
+            return instruments.contains(_selectedInstrument);
+          }).toList();
+        }
+
+        if (artists.isEmpty) {
+          return _buildNoResults();
+        }
+
+        return _buildGroupedArtistList(artists);
       },
     );
   }
@@ -720,7 +751,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildBrowseAllArtists() {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestoreService.searchArtists(query: ''),
+      stream: _firestoreService.getAllArtists(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF4ADE80)));

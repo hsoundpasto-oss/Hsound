@@ -61,6 +61,14 @@ class FirestoreService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot> getArtists() {
+    return _firestore
+        .collection('users')
+        .where('isArtist', isEqualTo: true)
+        .orderBy('name')
+        .snapshots();
+  }
+
   Stream<QuerySnapshot> getRecentUsers({int limit = 5}) {
     return _firestore
         .collection('users')

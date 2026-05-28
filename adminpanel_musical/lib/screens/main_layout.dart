@@ -2,6 +2,7 @@ import 'package:adminpanel_musical/screens/reviews_screen.dart';
 import 'package:adminpanel_musical/screens/songs_screen.dart';
 import 'package:adminpanel_musical/screens/events_screen.dart';
 import 'package:adminpanel_musical/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -25,7 +26,10 @@ class _MainLayoutState extends State<MainLayout> {
   Widget _getCurrentScreen() {
     switch (_currentRoute) {
       case '/dashboard':
-        return DashboardScreen(key: ValueKey('dash_$_refreshCounter'), onNavigate: _handleNavigation);
+        return DashboardScreen(
+          key: ValueKey('dash_$_refreshCounter'),
+          onNavigate: _handleNavigation,
+        );
       case '/users':
         return UsersScreen(key: ValueKey('users_$_refreshCounter'));
       case '/songs':
@@ -35,7 +39,10 @@ class _MainLayoutState extends State<MainLayout> {
       case '/events':
         return EventsScreen(key: ValueKey('events_$_refreshCounter'));
       default:
-        return DashboardScreen(key: ValueKey('dash_$_refreshCounter'), onNavigate: _handleNavigation);
+        return DashboardScreen(
+          key: ValueKey('dash_$_refreshCounter'),
+          onNavigate: _handleNavigation,
+        );
     }
   }
 
@@ -83,7 +90,10 @@ class _MainLayoutState extends State<MainLayout> {
               children: [
                 const Text(
                   'El nuevo administrador podrá iniciar sesión en el panel con su email y contraseña.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -137,7 +147,10 @@ class _MainLayoutState extends State<MainLayout> {
           actions: [
             TextButton(
               onPressed: isLoading ? null : () => Navigator.pop(ctx),
-              child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             ElevatedButton(
               onPressed: isLoading
@@ -147,10 +160,14 @@ class _MainLayoutState extends State<MainLayout> {
                       final email = emailController.text.trim();
                       final password = passwordController.text.trim();
 
-                      if (name.isEmpty || email.isEmpty || password.length < 6) {
+                      if (name.isEmpty ||
+                          email.isEmpty ||
+                          password.length < 6) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Completa todos los campos (contraseña mín. 6 caracteres)'),
+                            content: Text(
+                              'Completa todos los campos (contraseña mín. 6 caracteres)',
+                            ),
                             backgroundColor: AppColors.error,
                           ),
                         );
@@ -160,7 +177,11 @@ class _MainLayoutState extends State<MainLayout> {
                       setDialogState(() => isLoading = true);
 
                       final authService = AuthService();
-                      final result = await authService.createAdmin(email, password, name);
+                      final result = await authService.createAdmin(
+                        email,
+                        password,
+                        name,
+                      );
 
                       setDialogState(() => isLoading = false);
 
@@ -168,7 +189,9 @@ class _MainLayoutState extends State<MainLayout> {
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Administrador "$name" creado exitosamente'),
+                            content: Text(
+                              'Administrador "$name" creado exitosamente',
+                            ),
                             backgroundColor: AppColors.success,
                           ),
                         );
@@ -181,9 +204,15 @@ class _MainLayoutState extends State<MainLayout> {
                         );
                       }
                     },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
               child: isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text('Crear Admin'),
             ),
           ],
@@ -288,8 +317,74 @@ class _MainLayoutState extends State<MainLayout> {
         ),
         actions: [
           TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _resetAdminPassword(context, auth.currentUser?.email ?? '');
+            },
+            child: const Text(
+              'Restablecer mi contraseña',
+              style: TextStyle(color: AppColors.warning),
+            ),
+          ),
+          TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetAdminPassword(BuildContext context, String email) {
+    if (email.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text(
+          'Restablecer contraseña',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
+        content: Text(
+          'Se enviará un correo de restablecimiento a $email. ¿Deseas continuar?',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await FirebaseAuth.instance.sendPasswordResetEmail(
+                  email: email,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Correo enviado a $email'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
+            child: const Text('Enviar'),
           ),
         ],
       ),
@@ -437,7 +532,7 @@ class _MainLayoutState extends State<MainLayout> {
                                   title: const Text(
                                     'Crear Administrador',
                                     style: TextStyle(
-                                      color: AppColors.warning,
+                                      color: Color.fromARGB(255, 255, 255, 255),
                                       fontSize: 14,
                                     ),
                                   ),

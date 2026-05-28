@@ -139,13 +139,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         final updateData = <String, dynamic>{
           'name': _nameController.text,
           'bio': _bioController.text,
-          'youtubeUrl': _youtubeController.text,
-          'spotifyUrl': _spotifyController.text,
-          'soundcloudUrl': _soundcloudController.text,
-          'instagramUrl': _instagramController.text,
-          'tiktokUrl': _tiktokController.text,
-          'whatsappUrl': _whatsappController.text,
-          'facebookUrl': _facebookController.text,
+          'youtubeUrl': _normalizeUrl(_youtubeController.text),
+          'spotifyUrl': _normalizeUrl(_spotifyController.text),
+          'soundcloudUrl': _normalizeUrl(_soundcloudController.text),
+          'instagramUrl': _normalizeUrl(_instagramController.text),
+          'tiktokUrl': _normalizeUrl(_tiktokController.text),
+          'whatsappUrl': _normalizeUrl(_whatsappController.text),
+          'facebookUrl': _normalizeUrl(_facebookController.text),
           'contactEmail': _emailController.text,
           'updatedAt': FieldValue.serverTimestamp(),
         };
@@ -167,6 +167,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         });
       }
     }
+  }
+
+  String _normalizeUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return trimmed;
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      return 'https://$trimmed';
+    }
+    return trimmed;
+  }
+
+  String? _urlValidator(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final trimmed = value.trim();
+    final normalized = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : 'https://$trimmed';
+    final uri = Uri.tryParse(normalized);
+    if (uri == null || !uri.isAbsolute || (uri.scheme != 'http' && uri.scheme != 'https')) {
+      return 'Ingresa una URL válida (ej. https://...)';
+    }
+    return null;
   }
 
   @override
@@ -286,6 +308,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'YouTube',
                           hintText: 'https://youtube.com/@tucanal',
                           platform: 'youtube',
+                          validator: _urlValidator,
                         ),
                         
                         _buildSocialTextField(
@@ -293,6 +316,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'Spotify',
                           hintText: 'https://open.spotify.com/artist/tu-id',
                           platform: 'spotify',
+                          validator: _urlValidator,
                         ),
 
                         _buildSocialTextField(
@@ -300,6 +324,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'SoundCloud',
                           hintText: 'https://soundcloud.com/tu-usuario',
                           platform: 'soundcloud',
+                          validator: _urlValidator,
                         ),
 
                         _buildSocialTextField(
@@ -307,6 +332,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'TikTok',
                           hintText: 'https://tiktok.com/@tu-usuario',
                           platform: 'tik-tok',
+                          validator: _urlValidator,
                         ),
                         
                         const SizedBox(height: 20),
@@ -317,6 +343,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'Instagram',
                           hintText: 'https://instagram.com/tu-usuario',
                           platform: 'instagram',
+                          validator: _urlValidator,
                         ),
 
                         _buildSocialTextField(
@@ -324,6 +351,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'Facebook',
                           hintText: 'https://facebook.com/tu-pagina',
                           platform: 'facebook',
+                          validator: _urlValidator,
                         ),
 
                         const SizedBox(height: 20),
@@ -334,6 +362,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'WhatsApp',
                           hintText: 'https://wa.me/573001234567',
                           platform: 'whatsapp',
+                          validator: _urlValidator,
                         ),
 
                         _buildSocialTextField(

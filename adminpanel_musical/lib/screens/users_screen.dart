@@ -85,6 +85,7 @@ class _UsersScreenState extends State<UsersScreen> {
             makeArtist
                 ? 'Usuario convertido a artista exitosamente'
                 : 'Rol de artista removido exitosamente',
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: AppColors.success,
         ),
@@ -92,7 +93,7 @@ class _UsersScreenState extends State<UsersScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text('Error: $e', style: const TextStyle(color: Colors.white)),
           backgroundColor: AppColors.error,
         ),
       );
@@ -123,8 +124,8 @@ class _UsersScreenState extends State<UsersScreen> {
                 await _firestoreService.deleteUser(userId);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Usuario eliminado correctamente'),
+                  SnackBar(
+                    content: const Text('Usuario eliminado correctamente', style: TextStyle(color: Colors.white)),
                     backgroundColor: AppColors.success,
                   ),
                 );
@@ -132,7 +133,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Error al eliminar: $e'),
+                    content: Text('Error al eliminar: $e', style: const TextStyle(color: Colors.white)),
                     backgroundColor: AppColors.error,
                   ),
                 );
@@ -152,7 +153,7 @@ class _UsersScreenState extends State<UsersScreen> {
       if (currentUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Debes iniciar sesión para sincronizar'),
+            content: const Text('Debes iniciar sesión para sincronizar', style: TextStyle(color: Colors.white)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -299,6 +300,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       },
                       contentPadding: EdgeInsets.zero,
                     ),
+
                     if (isArtist) ...[
                       const SizedBox(height: 12),
                       Container(

@@ -99,17 +99,35 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   // Función para abrir enlaces sociales
   Future<void> _launchSocialUrl(String url) async {
     try {
-      final Uri uri = Uri.parse(url);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        throw Exception('No se pudo abrir $url');
+      String normalized = url.trim();
+      if (normalized.isEmpty) return;
+      if (!normalized.startsWith('http://') && !normalized.startsWith('https://') && !normalized.startsWith('mailto:')) {
+        normalized = 'https://$normalized';
       }
+      final Uri uri = Uri.parse(normalized);
+      if (!uri.isAbsolute || (uri.scheme != 'http' && uri.scheme != 'https' && uri.scheme != 'mailto')) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: const Text('Enlace no válido'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      if (!await canLaunchUrl(uri)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: const Text('No hay una aplicación instalada para abrir este enlace'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al abrir enlace: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('No se pudo abrir el enlace'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
