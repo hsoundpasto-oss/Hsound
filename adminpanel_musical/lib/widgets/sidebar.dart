@@ -83,13 +83,21 @@ class Sidebar extends StatelessWidget {
               children: [
                 CircleAvatar(
                   backgroundColor: AppColors.primary,
-                  child: Text(
-                    authProvider.currentUser?.name[0].toUpperCase() ?? 'A',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  backgroundImage: authProvider.currentUser?.photoUrl != null &&
+                          authProvider.currentUser!.photoUrl!.isNotEmpty
+                      ? NetworkImage(authProvider.currentUser!.photoUrl!)
+                      : null,
+                  child: authProvider.currentUser?.photoUrl == null ||
+                          authProvider.currentUser!.photoUrl!.isEmpty
+                      ? Text(
+                          authProvider.currentUser?.name[0].toUpperCase() ??
+                              'A',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -140,10 +148,20 @@ class Sidebar extends StatelessWidget {
                   title: 'Canciones',
                   route: '/songs',
                 ),
+                _buildMenuItem(
+                  icon: Icons.event_note,
+                  title: 'Eventos',
+                  route: '/events',
+                ),
+                _buildMenuItem(
+                  icon: Icons.pending_actions,
+                  title: 'Revisiones',
+                  route: '/reviews',
+                ),
                 // Solo mostrar aprobaciones si está habilitado
                 if (showApprovals) ...[
                   _buildMenuItem(
-                    icon: Icons.pending_actions,
+                    icon: Icons.approval,
                     title: 'Aprobaciones',
                     route: '/approvals',
                   ),

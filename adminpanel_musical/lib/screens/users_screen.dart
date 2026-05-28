@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../utils/app_colors.dart';
 import 'package:intl/intl.dart';
@@ -148,34 +148,258 @@ class _UsersScreenState extends State<UsersScreen> {
 
   Future<void> _syncEmails() async {
     try {
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('syncUserEmails')
-          .call();
-
-      final data = result.data as Map<String, dynamic>;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Sincronización completada: ${data['updated']} emails actualizados, ${data['skipped']} omitidos',
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Debes iniciar sesión para sincronizar'),
+            backgroundColor: AppColors.error,
           ),
-          backgroundColor: AppColors.success,
-        ),
-      );
-    } on FirebaseFunctionsException catch (e) {
+        );
+        return;
+      }
+
+      // Actualizar el email del admin actual en Firestore
+      if (currentUser.email != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .set({'email': currentUser.email}, SetOptions(merge: true));
+      }
+
+      // Leer usuarios de Firestore y actualizar emails faltantes
+      final usersSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .get();
+
+      int updated = 0;
+      int skipped = 0;
+
+      for (final userDoc in usersSnapshot.docs) {
+        final data = userDoc.data();
+        final email = data['email'] as String?;
+        if (email == null || email.isEmpty) {
+          // No podemos obtener el email de Auth desde el cliente
+          // Marcar como pendiente
+          await userDoc.reference.update({
+            'emailSyncPending': true,
+          });
+          updated++;
+        } else {
+          skipped++;
+        }
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.message}'),
-          backgroundColor: AppColors.error,
+          content: Text('Sincronización: $updated pendientes, $skipped actualizados'),
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error de conexión: $e'),
+          content: Text('Error: $e'),
           backgroundColor: AppColors.error,
         ),
       );
     }
+  }
+
+  void _showCreateUserDialog() {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    bool isArtist = false;
+    String selectedGenre = '';
+
+    final List<String> genres = [
+      'Rock', 'Pop', 'Hip Hop/Rap', 'Trap', 'Electrónica', 'Reggaetón',
+      'Salsa', 'Merengue', 'Vallenato', 'Bachata', 'Jazz', 'Blues',
+      'Clásica', 'Reggae', 'Metal', 'Indie', 'Folk', 'R&B', 'Country',
+      'Alternativo', 'Música Andina', 'Bambuco', 'Pasillo', 'Dancehall',
+      'Sanjuanero', 'Carranga', 'Música Popular', 'Despecho', 'Bolero',
+      'Cumbia', 'Champeta', 'Fusión Andina', 'Latin Trap', 'Otro',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: const Text(
+                'Crear Nuevo Usuario',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre completo',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Correo electrónico',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña (mín. 6 caracteres)',
+                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: const Text(
+                        '¿Es artista?',
+                        style: TextStyle(color: AppColors.textPrimary),
+                      ),
+                      value: isArtist,
+                      activeColor: AppColors.primary,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          isArtist = value;
+                          if (!value) selectedGenre = '';
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    if (isArtist) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedGenre.isEmpty ? null : selectedGenre,
+                          underline: const SizedBox(),
+                          dropdownColor: AppColors.surface,
+                          style: const TextStyle(color: AppColors.textPrimary),
+                          isExpanded: true,
+                          hint: const Text('Seleccionar género', style: TextStyle(color: AppColors.textSecondary)),
+                          items: genres.map((genre) => DropdownMenuItem(
+                            value: genre,
+                            child: Text(genre),
+                          )).toList(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              selectedGenre = value ?? '';
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+                    final email = emailController.text.trim();
+                    final password = passwordController.text.trim();
+
+                    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Todos los campos son obligatorios'), backgroundColor: AppColors.error),
+                      );
+                      return;
+                    }
+                    if (password.length < 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('La contraseña debe tener al menos 6 caracteres'), backgroundColor: AppColors.error),
+                      );
+                      return;
+                    }
+
+                    Navigator.pop(dialogContext);
+                    try {
+                      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                        email: email,
+                        password: password,
+                      );
+                      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+                        'name': name,
+                        'email': email,
+                        'isArtist': isArtist,
+                        'musicalGenre': isArtist ? selectedGenre : '',
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Usuario "$name" creado exitosamente'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    } on FirebaseAuthException catch (e) {
+                      String error = 'Error al crear usuario';
+                      if (e.code == 'email-already-in-use') {
+                        error = 'El correo ya está registrado';
+                      } else if (e.code == 'invalid-email') {
+                        error = 'Correo electrónico no válido';
+                      } else if (e.code == 'weak-password') {
+                        error = 'Contraseña muy débil';
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(error), backgroundColor: AppColors.error),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  child: const Text('Crear'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   // 🔹 MÉTODO NUEVO: Mostrar detalles del usuario
@@ -197,10 +421,10 @@ class _UsersScreenState extends State<UsersScreen> {
                 child: CircleAvatar(
                   radius: 40,
                   backgroundColor: _getRoleColor(user['isArtist'] == true).withOpacity(0.2),
-                  backgroundImage: user['photoUrl'] != null
-                      ? NetworkImage(user['photoUrl']!)
+                  backgroundImage: user['photoUrl'] != null && user['photoUrl'].toString().isNotEmpty
+                      ? NetworkImage(user['photoUrl'])
                       : null,
-                  child: user['photoUrl'] == null
+                  child: user['photoUrl'] == null || user['photoUrl'].toString().isEmpty
                       ? Icon(
                           Icons.person,
                           size: 40,
@@ -219,6 +443,15 @@ class _UsersScreenState extends State<UsersScreen> {
                 _buildDetailItem('Biografía', user['bio']!),
 
               if (user['isArtist'] == true) ...[
+                if (user['musicalGenre'] != null && user['musicalGenre'].toString().isNotEmpty)
+                  _buildDetailItem('Género Musical', user['musicalGenre']!),
+
+                if (user['instruments'] != null && (user['instruments'] as List).isNotEmpty)
+                  _buildDetailItem('Instrumentos', (user['instruments'] as List).join(', ')),
+
+                if (user['contactEmail'] != null && user['contactEmail'].toString().isNotEmpty)
+                  _buildDetailItem('Email de contacto', user['contactEmail']!),
+
                 const SizedBox(height: 16),
                 const Text(
                   'Enlaces Sociales:',
@@ -227,12 +460,40 @@ class _UsersScreenState extends State<UsersScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (user['youtubeUrl'] != null)
-                  _buildSocialLink('YouTube', user['youtubeUrl']!),
-                if (user['spotifyUrl'] != null)
-                  _buildSocialLink('Spotify', user['spotifyUrl']!),
-                if (user['instagramUrl'] != null)
-                  _buildSocialLink('Instagram', user['instagramUrl']!),
+                if (user['youtubeUrl'] != null && user['youtubeUrl'].toString().isNotEmpty)
+                  _buildSocialLink('youtube', 'YouTube', user['youtubeUrl']!),
+                if (user['spotifyUrl'] != null && user['spotifyUrl'].toString().isNotEmpty)
+                  _buildSocialLink('spotify', 'Spotify', user['spotifyUrl']!),
+                if (user['instagramUrl'] != null && user['instagramUrl'].toString().isNotEmpty)
+                  _buildSocialLink('instagram', 'Instagram', user['instagramUrl']!),
+                if (user['facebookUrl'] != null && user['facebookUrl'].toString().isNotEmpty)
+                  _buildSocialLink('facebook', 'Facebook', user['facebookUrl']!),
+                if (user['tiktokUrl'] != null && user['tiktokUrl'].toString().isNotEmpty)
+                  _buildSocialLink('tik-tok', 'TikTok', user['tiktokUrl']!),
+                if (user['soundcloudUrl'] != null && user['soundcloudUrl'].toString().isNotEmpty)
+                  _buildSocialLink('soundcloud', 'SoundCloud', user['soundcloudUrl']!),
+                if (user['whatsappUrl'] != null && user['whatsappUrl'].toString().isNotEmpty)
+                  _buildSocialLink('whatsapp', 'WhatsApp', user['whatsappUrl']!),
+
+                const SizedBox(height: 16),
+                const Text(
+                  'Canciones:',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildUserSongsList(userId),
+
+                const SizedBox(height: 16),
+                const Text(
+                  'Eventos:',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildUserEventsList(userId),
               ],
             ],
           ),
@@ -274,20 +535,13 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 
-  Widget _buildSocialLink(String platform, String url) {
+  Widget _buildSocialLink(String platform, String label, String url) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        platform == 'YouTube'
-            ? Icons.video_library
-            : platform == 'Spotify'
-                ? Icons.music_note
-                : Icons.camera_alt,
-        color: AppColors.primary,
-        size: 20,
-      ),
+      leading: Image.asset('assets/images/$platform.png', width: 20, height: 20,
+        errorBuilder: (c, e, s) => const Icon(Icons.link, color: AppColors.primary, size: 20)),
       title: Text(
-        platform,
+        label,
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
       ),
       subtitle: Text(
@@ -295,6 +549,64 @@ class _UsersScreenState extends State<UsersScreen> {
         style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         overflow: TextOverflow.ellipsis,
       ),
+    );
+  }
+
+  Widget _buildUserSongsList(String userId) {
+    return FutureBuilder<QuerySnapshot>(
+      future: _firestoreService.getSongsByArtist(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 24,
+            child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+          );
+        }
+        final songs = snapshot.data?.docs ?? [];
+        if (songs.isEmpty) {
+          return const Text('Sin canciones', style: TextStyle(color: AppColors.textSecondary, fontStyle: FontStyle.italic));
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: songs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text('• ${data['title'] ?? 'Sin título'}',
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildUserEventsList(String userId) {
+    return FutureBuilder<QuerySnapshot>(
+      future: _firestoreService.getEventsByArtist(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 24,
+            child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+          );
+        }
+        final events = snapshot.data?.docs ?? [];
+        if (events.isEmpty) {
+          return const Text('Sin eventos', style: TextStyle(color: AppColors.textSecondary, fontStyle: FontStyle.italic));
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: events.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text('• ${data['title'] ?? 'Sin título'}',
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -335,6 +647,19 @@ class _UsersScreenState extends State<UsersScreen> {
                       },
                     ),
                   ],
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _showCreateUserDialog,
+                icon: const Icon(Icons.person_add),
+                label: const Text('Crear Usuario'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ],
@@ -507,10 +832,10 @@ class _UsersScreenState extends State<UsersScreen> {
                               leading: CircleAvatar(
                                 backgroundColor:
                                     _getRoleColor(isArtist).withOpacity(0.2),
-                                backgroundImage: user['photoUrl'] != null
-                                    ? NetworkImage(user['photoUrl']!)
+                                backgroundImage: user['photoUrl'] != null && user['photoUrl'].toString().isNotEmpty
+                                    ? NetworkImage(user['photoUrl'])
                                     : null,
-                                child: user['photoUrl'] == null
+                                child: user['photoUrl'] == null || user['photoUrl'].toString().isEmpty
                                     ? Text(
                                         user['name']?[0].toUpperCase() ?? 'U',
                                         style: TextStyle(

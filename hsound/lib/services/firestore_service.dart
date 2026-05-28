@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/song_model.dart';
+import '../models/event_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -21,6 +22,15 @@ class FirestoreService {
 
     if (existingData['name'] != null && existingData['name'].isNotEmpty) {
       profileData['name'] = existingData['name'];
+    }
+
+    final newPhotoUrl = profileData['photoUrl']?.toString() ?? '';
+    if (newPhotoUrl.isEmpty) {
+      if (existingData['photoUrl'] != null && existingData['photoUrl'].toString().isNotEmpty) {
+        profileData['photoUrl'] = existingData['photoUrl'];
+      } else {
+        profileData.remove('photoUrl');
+      }
     }
 
     if (existingData['isArtist'] != null) {
@@ -90,12 +100,14 @@ class FirestoreService {
   }
 
   // Obtener canciones del artista
-  Stream<QuerySnapshot> getArtistSongs(String artistId) {
-    return _firestore
+  Stream<QuerySnapshot> getArtistSongs(String artistId, {bool onlyApproved = false}) {
+    Query query = _firestore
         .collection('songs')
-        .where('artistId', isEqualTo: artistId)
-        .orderBy('createdAt', descending: true)
-        .snapshots();
+        .where('artistId', isEqualTo: artistId);
+    if (onlyApproved) {
+      query = query.where('status', isEqualTo: 'approved');
+    }
+    return query.orderBy('createdAt', descending: true).snapshots();
   }
 
   // Obtener todas las canciones (para explorar)
@@ -106,11 +118,21 @@ class FirestoreService {
         .snapshots();
   }
 
-  // Obtener canciones por género
+  // Obtener canciones aprobadas (para home)
+  Stream<QuerySnapshot> getApprovedSongs() {
+    return _firestore
+        .collection('songs')
+        .where('status', isEqualTo: 'approved')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  // Obtener canciones por género (solo aprobadas)
   Stream<QuerySnapshot> getSongsByGenre(String genre) {
     return _firestore
         .collection('songs')
         .where('genre', isEqualTo: genre)
+        .where('status', isEqualTo: 'approved')
         .orderBy('createdAt', descending: true)
         .snapshots();
   }
@@ -144,36 +166,18 @@ class FirestoreService {
       searchQuery = searchQuery.where('genre', isEqualTo: genre);
     }
 
-    switch (sortBy) {
-      case 'popularity':
-        searchQuery = searchQuery.orderBy('likes', descending: true);
-        break;
-      case 'date':
-        searchQuery = searchQuery.orderBy('createdAt', descending: true);
-        break;
-      case 'title':
-      default:
-        searchQuery = searchQuery.orderBy('title', descending: false);
-        break;
-    }
-
-    return searchQuery.limit(limit).snapshots().handleError((error) {
-      return _fallbackSearch(query: query, genre: genre, sortBy: sortBy, limit: limit);
-    });
-  }
-
-  Stream<QuerySnapshot> _fallbackSearch({
-    required String query,
-    String? genre,
-    String? sortBy,
-    int limit = 20,
-  }) {
-    Query searchQuery = _firestore.collection('songs');
-
-    if (query.isNotEmpty) {
-      final lowerQuery = query.toLowerCase();
-      searchQuery = searchQuery
-          .where('searchKeywords', arrayContains: lowerQuery);
+    if (sortBy != null) {
+      switch (sortBy) {
+        case 'popularity':
+          searchQuery = searchQuery.orderBy('likes', descending: true);
+          break;
+        case 'date':
+          searchQuery = searchQuery.orderBy('createdAt', descending: true);
+          break;
+        case 'title':
+          searchQuery = searchQuery.orderBy('title', descending: false);
+          break;
+      }
     }
 
     return searchQuery.limit(limit).snapshots();
@@ -182,23 +186,25 @@ class FirestoreService {
   Stream<QuerySnapshot> searchArtists({
     required String query,
     int limit = 10,
+    String? genre,
+    String? instrument,
   }) {
-    if (query.isEmpty) {
-      return _firestore
-          .collection('users')
-          .where('isArtist', isEqualTo: true)
-          .limit(limit)
-          .snapshots();
+    Query queryRef = _firestore.collection('users').where('isArtist', isEqualTo: true);
+
+    if (genre != null && genre.isNotEmpty) {
+      queryRef = queryRef.where('musicalGenre', isEqualTo: genre);
     }
 
-    final lowerQuery = query.toLowerCase();
+    if (instrument != null && instrument.isNotEmpty) {
+      queryRef = queryRef.where('instruments', arrayContains: instrument);
+    }
 
-    return _firestore
-        .collection('users')
-        .where('isArtist', isEqualTo: true)
-        .where('searchKeywords', arrayContains: lowerQuery)
-        .limit(limit)
-        .snapshots();
+    if (query.isNotEmpty) {
+      final lowerQuery = query.toLowerCase();
+      queryRef = queryRef.where('searchKeywords', arrayContains: lowerQuery);
+    }
+
+    return queryRef.limit(limit).snapshots();
   }
 
   // Obtener géneros únicos para filtros
@@ -403,5 +409,61 @@ Future<void> updateUserProfile(Map<String, dynamic> profileData) async {
 // ✅ OBTENER LIKES EN TIEMPO REAL (para actualizar contadores)
   Stream<DocumentSnapshot> getSongLikesStream(String songId) {
     return _firestore.collection('songs').doc(songId).snapshots();
+  }
+
+  // ========================================
+  // MÉTODOS PARA EVENTOS
+  // ========================================
+
+  Future<void> saveEvent(Event event) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await _firestore.collection('events').add(event.toFirestore());
+    }
+  }
+
+  Stream<QuerySnapshot> getApprovedEvents() {
+    return _firestore
+        .collection('events')
+        .where('status', isEqualTo: 'approved')
+        .orderBy('eventDate', descending: false)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getArtistEvents(String artistId) {
+    return _firestore
+        .collection('events')
+        .where('artistId', isEqualTo: artistId)
+        .orderBy('eventDate', descending: false)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getArtistApprovedEvents(String artistId) {
+    return _firestore
+        .collection('events')
+        .where('artistId', isEqualTo: artistId)
+        .where('status', isEqualTo: 'approved')
+        .orderBy('eventDate', descending: false)
+        .snapshots();
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    try {
+      await _firestore.collection('events').doc(eventId).delete();
+    } catch (e) {
+      print('Error al eliminar evento: $e');
+      throw e;
+    }
+  }
+
+  Future<DocumentSnapshot> getEventById(String eventId) async {
+    return await _firestore.collection('events').doc(eventId).get();
+  }
+
+  Stream<QuerySnapshot> getAllEvents() {
+    return _firestore
+        .collection('events')
+        .orderBy('eventDate', descending: false)
+        .snapshots();
   }
 }

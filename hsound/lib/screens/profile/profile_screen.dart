@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hsound/services/firestore_service.dart';
 import 'package:hsound/services/share_service.dart';
+import 'package:hsound/models/event_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -293,9 +294,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    children: [
                     _buildUserInfoCard(),
                     const SizedBox(height: 20),
+
+                    if (_isArtist) _buildMotivationalMessages(),
+                    if (_isArtist) const SizedBox(height: 20),
 
                     if (_isArtist && _hasSocialLinks())
                       _buildSocialLinksSection(),
@@ -305,11 +309,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (_isArtist) 
                       _buildArtistSongsSection(),
 
+                    if (_isArtist) 
+                      _buildArtistEventsSection(),
+
                     if (!_isArtist) 
                       _buildContactSection(),
 
                     if (_isArtist) 
-                      _buildAddSongButton(),
+                      _buildAddButtons(),
 
                     const SizedBox(height: 20),
 
@@ -318,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-            ),
+      ),
     );
   }
 
@@ -403,6 +410,151 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+
+          if (_isArtist && _userData?['musicalGenre'] != null && _userData!['musicalGenre'].toString().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4ADE80).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Género: ${_userData!['musicalGenre']}',
+                  style: const TextStyle(
+                    color: Color(0xFF4ADE80),
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+          if (_isArtist && _userData?['instruments'] != null && (_userData!['instruments'] as List).isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Column(
+                children: [
+                  const Text(
+                    'Instrumentos:',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: (_userData!['instruments'] as List).map((inst) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D2D2D),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF4ADE80).withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          inst.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 11),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMotivationalMessages() {
+    final messages = <Widget>[];
+    final bool bioEmpty = _userData?['bio'] == null || _userData!['bio'].toString().trim().isEmpty;
+    final bool noSocialLinks = !_hasSocialLinks();
+    final bool noGenre = _userData?['musicalGenre'] == null || _userData!['musicalGenre'].toString().trim().isEmpty;
+
+    if (bioEmpty) {
+      messages.add(_buildMessageCard(
+        icon: Icons.description,
+        message: 'Completa tu biografía para que los fans te conozcan',
+        buttonText: 'Editar Biografía',
+        onTap: () => Navigator.pushNamed(context, '/edit_profile'),
+      ));
+    }
+
+    if (noGenre) {
+      messages.add(_buildMessageCard(
+        icon: Icons.category,
+        message: 'Completa tu género musical para que los fans te encuentren',
+        buttonText: 'Agregar Género',
+        onTap: () => Navigator.pushNamed(context, '/edit_profile'),
+      ));
+    }
+
+    if (noSocialLinks) {
+      messages.add(_buildMessageCard(
+        icon: Icons.share,
+        message: 'Agrega tus redes sociales para tener más alcance',
+        buttonText: 'Agregar Redes',
+        onTap: () => Navigator.pushNamed(context, '/edit_profile'),
+      ));
+    }
+
+    return Column(
+      children: messages,
+    );
+  }
+
+  Widget _buildMessageCard({
+    required IconData icon,
+    required String message,
+    required String buttonText,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFA500).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFFFFA500), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: onTap,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    backgroundColor: const Color(0xFFFFA500).withOpacity(0.2),
+                    foregroundColor: const Color(0xFFFFA500),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(buttonText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -493,75 +645,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (_userData?['youtubeUrl'] != null &&
               _userData!['youtubeUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.video_library,
+              platform: 'youtube',
               label: 'YouTube',
               url: _userData!['youtubeUrl'],
-              color: Colors.red,
             ),
 
           if (_userData?['spotifyUrl'] != null &&
               _userData!['spotifyUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.music_note,
+              platform: 'spotify',
               label: 'Spotify',
               url: _userData!['spotifyUrl'],
-              color: Color(0xFF1DB954),
             ),
 
           if (_userData?['soundcloudUrl'] != null &&
               _userData!['soundcloudUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.cloud,
+              platform: 'soundcloud',
               label: 'SoundCloud',
               url: _userData!['soundcloudUrl'],
-              color: Color(0xFFFF7700),
             ),
 
           if (_userData?['tiktokUrl'] != null &&
               _userData!['tiktokUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.video_camera_back,
+              platform: 'tik-tok',
               label: 'TikTok',
               url: _userData!['tiktokUrl'],
-              color: Color(0xFF000000),
             ),
 
           // Enlaces sociales
           if (_userData?['instagramUrl'] != null &&
               _userData!['instagramUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.camera_alt,
+              platform: 'instagram',
               label: 'Instagram',
               url: _userData!['instagramUrl'],
-              color: Color(0xFFE4405F),
             ),
 
           if (_userData?['facebookUrl'] != null &&
               _userData!['facebookUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.facebook,
+              platform: 'facebook',
               label: 'Facebook',
               url: _userData!['facebookUrl'],
-              color: Color(0xFF1877F2),
             ),
 
           // Enlaces de contacto
           if (_userData?['whatsappUrl'] != null &&
               _userData!['whatsappUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.phone,
+              platform: 'whatsapp',
               label: 'WhatsApp',
               url: _userData!['whatsappUrl'],
-              color: Color(0xFF25D366),
             ),
 
           if (_userData?['contactEmail'] != null &&
               _userData!['contactEmail'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.email,
+              platform: 'gmail',
               label: 'Email de Contacto',
               url: 'mailto:${_userData!['contactEmail']}',
-              color: Color(0xFFEA4335),
             ),
         ],
       ),
@@ -603,14 +747,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.5)),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.music_off, color: Colors.grey, size: 50),
+                    const Icon(Icons.music_off, color: Color(0xFFFFA500), size: 50),
                     const SizedBox(height: 12),
                     const Text(
-                      'Aún no has subido canciones',
-                      style: TextStyle(color: Colors.grey),
+                      'Sube tu primera canción y empieza a sonar en Pasto',
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
@@ -641,6 +787,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: songData['title'] ?? 'Sin título',
                   genre: songData['genre'] ?? 'General',
                   platform: songData['platform'] ?? 'youtube',
+                  status: songData['status'] ?? 'approved',
+                  reviewMessage: songData['reviewMessage'],
                   onDelete: () => _deleteSong(
                       songDoc.id, songData['title'] ?? 'Canción'),
                 );
@@ -652,28 +800,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAddSongButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _navigateToAddSong,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: const Color(0xFF4ADE80),
-          foregroundColor: const Color(0xFF1E1E1E),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildAddButtons() {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _navigateToAddSong,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: const Color(0xFF4ADE80),
+              foregroundColor: const Color(0xFF1E1E1E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add, size: 24),
+            label: const Text(
+              'Agregar Canción',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
-        icon: const Icon(Icons.add, size: 24),
-        label: const Text(
-          'Agregar Canción',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _navigateToAddEvent,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: const Color(0xFFFFA500),
+              foregroundColor: const Color(0xFF1E1E1E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.event, size: 24),
+            label: const Text(
+              'Agregar Evento',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -717,11 +892,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   //  Item de enlace social
   Widget _buildSocialLinkItem({
-    required IconData icon,
+    required String platform,
     required String label,
     required String url,
-    required Color color,
   }) {
+    final color = _socialColor(platform);
     return GestureDetector(
       onTap: () => _launchSocialUrl(url),
       child: Container(
@@ -734,7 +909,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: color),
+            Image.asset('assets/images/$platform.png', width: 24, height: 24,
+              errorBuilder: (c, e, s) => Icon(Icons.link, color: color, size: 20)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -763,14 +939,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String genre,
     required String platform,
     required VoidCallback onDelete,
+    String status = 'approved',
+    String? reviewMessage,
   }) {
+    Widget statusIcon;
+    String statusText;
+    Color statusColor;
+
+    switch (status) {
+      case 'pending':
+        statusIcon = const Icon(Icons.access_time, color: Color(0xFFFFA500), size: 18);
+        statusText = 'En revisión';
+        statusColor = const Color(0xFFFFA500);
+        break;
+      case 'rejected':
+        statusIcon = GestureDetector(
+          onTap: () => _showRejectionReason(reviewMessage),
+          child: const Icon(Icons.warning_amber, color: Colors.red, size: 18),
+        );
+        statusText = 'Rechazada';
+        statusColor = Colors.red;
+        break;
+      default:
+        statusIcon = const Icon(Icons.check_circle, color: Color(0xFF4ADE80), size: 18);
+        statusText = 'Aprobada';
+        statusColor = const Color(0xFF4ADE80);
+        break;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E1E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF4ADE80).withOpacity(0.3)),
+        border: Border.all(color: statusColor.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -801,12 +1004,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  genre,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      genre,
+                      style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    const SizedBox(width: 8),
+                    statusIcon,
+                    const SizedBox(width: 4),
+                    Text(
+                      statusText,
+                      style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -826,16 +1037,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showRejectionReason(String? reason) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'Motivo de Rechazo',
+          style: TextStyle(color: Colors.red),
+        ),
+        content: Text(
+          reason ?? 'No se especificó un motivo.',
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Entendido', style: TextStyle(color: Color(0xFF4ADE80))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _socialColor(String platform) {
+    switch (platform) {
+      case 'youtube': return Colors.red;
+      case 'spotify': return const Color(0xFF1DB954);
+      case 'soundcloud': return const Color(0xFFFF7700);
+      case 'tik-tok': return const Color(0xFF000000);
+      case 'instagram': return const Color(0xFFE4405F);
+      case 'facebook': return const Color(0xFF1877F2);
+      case 'whatsapp': return const Color(0xFF25D366);
+      case 'gmail': return const Color(0xFFEA4335);
+      default: return Colors.grey;
+    }
+  }
+
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Icon(Icons.video_library, color: Colors.red, size: 16);
+        return Image.asset('assets/images/youtube.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.video_library, color: Colors.red, size: 16));
       case 'spotify':
-        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
+        return Image.asset('assets/images/spotify.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16));
       case 'soundcloud':
-        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16);
+        return Image.asset('assets/images/soundcloud.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16));
       case 'youtube_music':
-        return const Icon(Icons.library_music, color: Colors.red, size: 16);
+        return Image.asset('assets/images/youtube.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.library_music, color: Colors.red, size: 16));
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }
@@ -886,5 +1134,287 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Función para navegar a agregar canción
   void _navigateToAddSong() {
     Navigator.pushNamed(context, '/add_song');
+  }
+
+  void _navigateToAddEvent() {
+    Navigator.pushNamed(context, '/add_event');
+  }
+
+  Future<void> _deleteEvent(String eventId, String eventTitle) async {
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E1E1E),
+          title: const Text(
+            'Eliminar Evento',
+            style: TextStyle(color: Color(0xFFFFA500)),
+          ),
+          content: Text(
+            '¿Estás seguro de que quieres eliminar "$eventTitle"?\n\nEsta acción no se puede deshacer.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmDelete) {
+      try {
+        await _firestoreService.deleteEvent(eventId);
+        _showSuccessSnackBar('Evento "$eventTitle" eliminado');
+      } catch (e) {
+        _showErrorSnackBar('Error al eliminar: $e');
+      }
+    }
+  }
+
+  Widget _buildArtistEventsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        const Text(
+          'Mis Eventos',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream: _firestoreService.getArtistEvents(user!.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF4ADE80)),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFA500).withOpacity(0.5)),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.event_busy, color: Color(0xFFFFA500), size: 50),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No tienes eventos aún. ¡Crea tu primer evento!',
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final events = snapshot.data!.docs;
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: events.length,
+              itemBuilder: (context, index) {
+                final eventDoc = events[index];
+                final eventObj = Event.fromFirestore(eventDoc);
+
+                final isExpired = eventObj.eventDate.isBefore(DateTime.now());
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isExpired
+                          ? Colors.grey.withOpacity(0.3)
+                          : const Color(0xFFFFA500).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2D2D2D),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.event,
+                          color: Color(0xFFFFA500),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    eventObj.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (isExpired)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Expirado',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  eventObj.venue,
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  eventObj.price,
+                                  style: const TextStyle(
+                                    color: Color(0xFF4ADE80),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                                _buildStatusBadge(eventObj.status, reviewMessage: eventObj.reviewMessage),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${eventObj.eventDate.day}/${eventObj.eventDate.month}/${eventObj.eventDate.year}',
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _deleteEvent(eventDoc.id, eventObj.title),
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Eliminar evento',
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusBadge(String status, {String? reviewMessage}) {
+    Color color;
+    String text;
+    IconData icon;
+
+    switch (status) {
+      case 'pending':
+        color = const Color(0xFFFFA500);
+        text = 'En revisión';
+        icon = Icons.access_time;
+        break;
+      case 'rejected':
+        color = Colors.red;
+        text = 'Rechazado';
+        icon = Icons.warning_amber;
+        break;
+      default:
+        color = const Color(0xFF4ADE80);
+        text = 'Aprobado';
+        icon = Icons.check_circle;
+        break;
+    }
+
+    return GestureDetector(
+      onTap: status == 'rejected'
+          ? () => _showRejectionReason(reviewMessage)
+          : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 3),
+            Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

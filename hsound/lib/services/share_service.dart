@@ -26,6 +26,10 @@ class ShareService {
     await Share.share(text);
   }
 
+  static Future<void> shareEvent(String eventText) async {
+    await Share.share(eventText);
+  }
+
   static Future<void> shareApp() async {
     const String text = 'Descarga HSound - La app de musica de Pasto!\n'
                         'Encuentra artistas locales y nueva musica\n'

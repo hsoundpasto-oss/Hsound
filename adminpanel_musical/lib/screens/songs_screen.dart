@@ -19,26 +19,12 @@ class _SongsScreenState extends State<SongsScreen> {
 
   // Lista completa de géneros musicales
   final List<String> _genres = [
-    'Rock',
-    'Pop',
-    'Hip Hop/Rap',
-    'Electrónica',
-    'Reggaetón',
-    'Salsa',
-    'Merengue',
-    'Vallenato',
-    'Bachata',
-    'Jazz',
-    'Blues',
-    'Clásica',
-    'Reggae',
-    'Metal',
-    'Indie',
-    'Folk',
-    'R&B',
-    'Country',
-    'Alternativo',
-    'Otro',
+    'Rock', 'Pop', 'Hip Hop/Rap', 'Trap', 'Electrónica', 'Reggaetón',
+    'Salsa', 'Merengue', 'Vallenato', 'Bachata', 'Jazz', 'Blues',
+    'Clásica', 'Reggae', 'Metal', 'Indie', 'Folk', 'R&B', 'Country',
+    'Alternativo', 'Música Andina', 'Bambuco', 'Pasillo', 'Dancehall',
+    'Sanjuanero', 'Carranga', 'Música Popular', 'Despecho', 'Bolero',
+    'Cumbia', 'Champeta', 'Fusión Andina', 'Latin Trap', 'Otro',
   ];
 
   void _deleteSong(String songId, String songTitle) {
@@ -136,8 +122,8 @@ class _SongsScreenState extends State<SongsScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: _firestoreService.getAllSongs(),
+          StreamBuilder<QuerySnapshot>(
+            stream: _firestoreService.getAllSongs(),
                       builder: (context, snapshot) {
                         final count = snapshot.data?.docs.length ?? 0;
                         return Text(
@@ -218,6 +204,7 @@ class _SongsScreenState extends State<SongsScreen> {
                   },
                 ),
               ),
+
             ],
           ),
         ),
@@ -304,6 +291,7 @@ class _SongsScreenState extends State<SongsScreen> {
                               ),
                             ),
                             child: ListTile(
+                              onTap: () => _showSongDetail(song, songDoc.id),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 24,
                                 vertical: 12,
@@ -390,6 +378,63 @@ class _SongsScreenState extends State<SongsScreen> {
         ),
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  void _showSongDetail(Map<String, dynamic> song, String songId) {
+    final status = song['status'] ?? 'approved';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          song['title'] ?? 'Canción',
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _detailRow('ID', songId),
+              _detailRow('Título', song['title'] ?? '—'),
+              _detailRow('Artista', song['artistName'] ?? '—'),
+              _detailRow('Género', song['genre'] ?? '—'),
+              _detailRow('Plataforma', song['platform'] ?? '—'),
+              _detailRow('Estado', status == 'approved' ? 'Aprobada' : status == 'rejected' ? 'Rechazada' : 'Pendiente'),
+              _detailRow('Subida', _getFormattedDate(song['createdAt'])),
+              if (song['url'] != null)
+                _detailRow('URL', song['url']),
+              if (song['reviewMessage'] != null)
+                _detailRow('Motivo', song['reviewMessage']),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text('$label:', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+          ),
+        ],
+      ),
     );
   }
 

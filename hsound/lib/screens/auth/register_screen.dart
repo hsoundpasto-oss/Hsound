@@ -125,6 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               userCredential.user!.displayName ??
               'Usuario',
           'email': userEmail,
+          'photoUrl': googleUser.photoUrl ?? userCredential.user!.photoURL ?? '',
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

@@ -27,11 +27,36 @@ class _AddSongScreenState extends State<AddSongScreen> {
   String? _artistName;
 
   final List<Map<String, dynamic>> _platforms = [
-    {'value': 'youtube', 'label': 'YouTube', 'icon': Icons.video_library, 'color': Colors.red},
-    {'value': 'spotify', 'label': 'Spotify', 'icon': Icons.music_note, 'color': const Color(0xFF1DB954)},
-    {'value': 'youtube_music', 'label': 'YouTube Music', 'icon': Icons.library_music, 'color': Colors.red},
-    {'value': 'soundcloud', 'label': 'SoundCloud', 'icon': Icons.cloud, 'color': const Color(0xFFFF7700)},
-    {'value': 'other', 'label': 'Otra plataforma', 'icon': Icons.link, 'color': Colors.grey},
+    {
+      'value': 'youtube',
+      'label': 'YouTube',
+      'icon': Icons.video_library,
+      'color': Colors.red
+    },
+    {
+      'value': 'spotify',
+      'label': 'Spotify',
+      'icon': Icons.music_note,
+      'color': const Color(0xFF1DB954)
+    },
+    {
+      'value': 'youtube_music',
+      'label': 'YouTube Music',
+      'icon': Icons.library_music,
+      'color': Colors.red
+    },
+    {
+      'value': 'soundcloud',
+      'label': 'SoundCloud',
+      'icon': Icons.cloud,
+      'color': const Color(0xFFFF7700)
+    },
+    {
+      'value': 'other',
+      'label': 'Otra plataforma',
+      'icon': Icons.link,
+      'color': Colors.grey
+    },
   ];
 
   // 🎯 MODIFICADO: Lista de géneros musicales (con Trap)
@@ -39,7 +64,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
     'Rock',
     'Pop',
     'Hip Hop/Rap',
-    'Trap', // 🎵 NUEVO: Género Trap agregado
+    'Trap',
     'Electrónica',
     'Reggaetón',
     'Salsa',
@@ -56,7 +81,20 @@ class _AddSongScreenState extends State<AddSongScreen> {
     'R&B',
     'Country',
     'Alternativo',
-    'Otro'
+    'Música Andina',
+    'Bambuco',
+    'Pasillo',
+    'Dancehall',
+    'Sanjuanero',
+    'Carranga',
+    'Música Popular',
+    'Despecho',
+    'Bolero',
+    'Cumbia',
+    'Champeta',
+    'Fusión Andina',
+    'Latin Trap',
+    'Otro',
   ];
 
   @override
@@ -89,7 +127,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF15803D), // Verde más oscuro
         behavior: SnackBarBehavior.floating,
@@ -104,7 +143,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.blue[700], // Azul para información
         behavior: SnackBarBehavior.floating,
@@ -119,7 +159,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.orange[700], // Naranja para advertencias
         behavior: SnackBarBehavior.floating,
@@ -134,7 +175,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.red[700],
         behavior: SnackBarBehavior.floating,
@@ -173,7 +215,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
           // Guardar en Firestore
           await _firestoreService.saveSong(song);
 
-          _showSuccessSnackBar('Cancion agregada exitosamente!');
+          _showSuccessSnackBar(
+              'Tu canción ha sido enviada para revisión. Los administradores la revisarán pronto.');
 
           Navigator.pop(context);
         }
@@ -255,7 +298,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
         break;
 
       default:
-        _showWarningSnackBar('Otra plataforma: Se intentara reproduccion embebida');
+        _showWarningSnackBar(
+            'Otra plataforma: Se intentara reproduccion embebida');
         break;
     }
 
@@ -296,7 +340,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E1E1E),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF4ADE80).withOpacity(0.3)),
+                          border: Border.all(
+                              color: const Color(0xFF4ADE80).withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
@@ -397,11 +442,13 @@ class _AddSongScreenState extends State<AddSongScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E1E1E),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                          border:
+                              Border.all(color: Colors.grey.withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.info, color: Colors.blue, size: 16),
+                            const Icon(Icons.info,
+                                color: Colors.blue, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -477,7 +524,7 @@ class _AddSongScreenState extends State<AddSongScreen> {
   String _getPlatformInfoText() {
     switch (_selectedPlatform) {
       case 'youtube':
-        return 'Acepta: youtube.com, youtu.be. Reproducción embebida disponible.';
+        return 'Tu cancion será revisada por los administradores antes de publicarse.';
       case 'spotify':
         return 'Solo tracks individuales (/track/). Widget oficial de Spotify.';
       case 'soundcloud':
@@ -556,7 +603,8 @@ class _AddSongScreenState extends State<AddSongScreen> {
             value: platform['value'] as String,
             child: Row(
               children: [
-                Icon(platform['icon'] as IconData, color: platform['color'] as Color, size: 16),
+                Icon(platform['icon'] as IconData,
+                    color: platform['color'] as Color, size: 16),
                 const SizedBox(width: 10),
                 Text(platform['label'] as String),
               ],

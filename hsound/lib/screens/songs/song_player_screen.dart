@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hsound/services/share_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,6 +9,7 @@ class SongPlayerScreen extends StatefulWidget {
   final String songTitle;
   final String artistName;
   final String platform;
+  final String artistId;
 
   const SongPlayerScreen({
     super.key,
@@ -15,6 +17,7 @@ class SongPlayerScreen extends StatefulWidget {
     required this.songTitle,
     required this.artistName,
     required this.platform,
+    this.artistId = '',
   });
 
   @override
@@ -283,12 +286,53 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(
-          'Reproduciendo',
-          style: TextStyle(
-            color: Color(0xFF4ADE80),
-            fontWeight: FontWeight.bold,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reproduciendo: ${widget.songTitle}',
+              style: const TextStyle(
+                color: Color(0xFF4ADE80),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (widget.artistName.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  if (widget.artistId.isNotEmpty) {
+                    Navigator.pushNamed(
+                      context,
+                      '/artist_profile',
+                      arguments: {'artistId': widget.artistId},
+                    );
+                  }
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.artistName,
+                      style: const TextStyle(
+                        color: Color(0xFF4ADE80),
+                        fontSize: 12,
+                        decoration: TextDecoration.underline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.open_in_new,
+                      color: Color(0xFF4ADE80),
+                      size: 12,
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF4ADE80)),
@@ -334,6 +378,119 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
     );
   }
 
+  void _showArtistInfo(BuildContext context) {
+    if (widget.artistId.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('users').doc(widget.artistId).get(),
+        builder: (context, snapshot) {
+          final data = snapshot.data?.data() as Map<String, dynamic>?;
+          final bio = data?['bio'] as String?;
+          final genre = data?['musicalGenre'] as String?;
+          final instruments = data?['instruments'] as List?;
+          final name = data?['name'] ?? widget.artistName;
+          final email = data?['email'] as String?;
+
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.person, color: Color(0xFF4ADE80), size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const Center(child: CircularProgressIndicator(color: Color(0xFF4ADE80)))
+                  else if (snapshot.hasError)
+                    const Text('Error al cargar información', style: TextStyle(color: Colors.red))
+                  else ...[
+                    if (email != null) ...[
+                      _infoRow(Icons.email, 'Email', email),
+                      const SizedBox(height: 12),
+                    ],
+                    if (bio != null && bio.isNotEmpty) ...[
+                      _infoRow(Icons.description, 'Biografía', bio),
+                      const SizedBox(height: 12),
+                    ],
+                    if (genre != null && genre.isNotEmpty) ...[
+                      _infoRow(Icons.music_note, 'Género', genre),
+                      const SizedBox(height: 12),
+                    ],
+                    if (instruments != null && instruments.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Instrumentos:', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6, runSpacing: 6,
+                            children: instruments.map((inst) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2D2D2D),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF4ADE80).withOpacity(0.3)),
+                              ),
+                              child: Text(inst.toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            )).toList(),
+                          ),
+                        ],
+                      ),
+                    if (email == null && (bio == null || bio.isEmpty) && (genre == null || genre.isEmpty) && (instruments == null || instruments.isEmpty))
+                      const Text('El artista aún no ha completado su perfil.', style: TextStyle(color: Colors.grey)),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.pushNamed(context, '/artist_profile', arguments: {'artistId': widget.artistId});
+                },
+                child: const Text('Ver perfil completo', style: TextStyle(color: Color(0xFF4ADE80))),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cerrar', style: TextStyle(color: Colors.grey)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: const Color(0xFF4ADE80), size: 18),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(color: Colors.white, fontSize: 14)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSongInfo() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -366,11 +523,25 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 8),
-          Text(
-            widget.artistName,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 16,
+          GestureDetector(
+            onTap: () => _showArtistInfo(context),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.person, color: Color(0xFF4ADE80), size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  widget.artistName,
+                  style: const TextStyle(
+                    color: Color(0xFF4ADE80),
+                    fontSize: 16,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.open_in_new, color: Color(0xFF4ADE80), size: 14),
+              ],
             ),
           ),
           const SizedBox(height: 4),
@@ -644,13 +815,13 @@ class _SongPlayerScreenState extends State<SongPlayerScreen> {
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Icon(Icons.video_library, color: Colors.red, size: 20);
+        return Image.asset('assets/images/youtube.png', width: 24, height: 24, errorBuilder: (c, e, s) => const Icon(Icons.video_library, color: Colors.red, size: 20));
       case 'spotify':
-        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 20);
+        return Image.asset('assets/images/spotify.png', width: 24, height: 24, errorBuilder: (c, e, s) => const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 20));
       case 'soundcloud':
-        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 20);
+        return Image.asset('assets/images/soundcloud.png', width: 24, height: 24, errorBuilder: (c, e, s) => const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 20));
       case 'youtube_music':
-        return const Icon(Icons.library_music, color: Colors.red, size: 20);
+        return Image.asset('assets/images/youtube.png', width: 24, height: 24, errorBuilder: (c, e, s) => const Icon(Icons.library_music, color: Colors.red, size: 20));
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 24);
     }

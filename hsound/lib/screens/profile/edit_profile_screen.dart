@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -19,7 +18,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _youtubeController = TextEditingController();
   final TextEditingController _spotifyController = TextEditingController();
-  final TextEditingController _soundcloudController = TextEditingController(); // 🎵 NUEVO
+  final TextEditingController _soundcloudController = TextEditingController();
   final TextEditingController _instagramController = TextEditingController();
   final TextEditingController _tiktokController = TextEditingController();
   final TextEditingController _whatsappController = TextEditingController();
@@ -28,6 +27,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
   bool _isArtist = false;
   bool _isLoading = false;
+  String _selectedGenre = '';
+  Set<String> _selectedInstruments = {};
+
+  final List<String> _genres = [
+    'Rock', 'Pop', 'Hip Hop/Rap', 'Trap', 'Electrónica', 'Reggaetón',
+    'Salsa', 'Merengue', 'Vallenato', 'Bachata', 'Jazz', 'Blues',
+    'Clásica', 'Reggae', 'Metal', 'Indie', 'Folk', 'R&B', 'Country',
+    'Alternativo', 'Música Andina', 'Bambuco', 'Pasillo', 'Dancehall',
+    'Sanjuanero', 'Carranga', 'Música Popular', 'Despecho', 'Bolero',
+    'Cumbia', 'Champeta', 'Fusión Andina', 'Latin Trap', 'Otro',
+  ];
+
+  final List<String> _instrumentOptions = [
+    'Guitarra acústica', 'Guitarra eléctrica', 'Bajo eléctrico', 'Bajo acústico',
+    'Charango', 'Tiple', 'Bandola', 'Cuatro', 'Arpa', 'Violín', 'Viola',
+    'Violonchelo', 'Contrabajo', 'Mandolina', 'Ukelele',
+    'Saxofón', 'Flauta traversa', 'Flauta dulce', 'Clarinete', 'Trompeta',
+    'Trombón', 'Trompa', 'Tuba', 'Armónica', 'Acordeón', 'Ocarina',
+    'Quena', 'Zampoña',
+    'Batería', 'Percusión latina', 'Marimba', 'Xilófono', 'Tambores',
+    'Djembé', 'Cajón peruano', 'Pandereta',
+    'Piano', 'Teclado', 'Órgano', 'Sintetizador', 'Acordeón a piano',
+    'Voz soprano', 'Voz mezzosoprano', 'Voz contralto', 'Voz tenor',
+    'Voz barítono', 'Voz bajo', 'Voz lírica', 'Voz popular',
+    'Controlador MIDI', 'Sampler', 'Drum machine', 'Toca discos (DJ)',
+    'Mesa de mezclas', 'Producción musical',
+  ];
 
   @override
   void initState() {
@@ -57,6 +83,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _facebookController.text = data['facebookUrl'] ?? '';
           _emailController.text = data['contactEmail'] ?? '';
           _isArtist = data['isArtist'] ?? false;
+          _selectedGenre = data['musicalGenre'] ?? '';
+          if (data['instruments'] != null) {
+            _selectedInstruments = Set<String>.from(data['instruments'] as List);
+          }
         });
       }
     } catch (e) {
@@ -106,20 +136,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
 
       try {
-        // 🎯 CORREGIDO: Usar updateUserProfile en lugar de saveUserProfile
-        await _firestoreService.updateUserProfile({
+        final updateData = <String, dynamic>{
           'name': _nameController.text,
           'bio': _bioController.text,
           'youtubeUrl': _youtubeController.text,
           'spotifyUrl': _spotifyController.text,
-          'soundcloudUrl': _soundcloudController.text, // 🎵 NUEVO
+          'soundcloudUrl': _soundcloudController.text,
           'instagramUrl': _instagramController.text,
           'tiktokUrl': _tiktokController.text,
           'whatsappUrl': _whatsappController.text,
           'facebookUrl': _facebookController.text,
           'contactEmail': _emailController.text,
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        };
+        if (_isArtist) {
+          updateData['musicalGenre'] = _selectedGenre;
+          updateData['instruments'] = _selectedInstruments.toList();
+        }
+        await _firestoreService.updateUserProfile(updateData);
 
         _showSuccessSnackBar('Perfil actualizado correctamente');
         
@@ -239,13 +273,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       // Solo para artistas: enlaces de música y redes
                       if (_isArtist) ...[
                         const SizedBox(height: 20),
+                        _buildSectionHeader('Género Musical'),
+                        _buildGenreDropdown(),
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Instrumentos que tocas'),
+                        _buildInstrumentsSelector(),
+                        const SizedBox(height: 20),
                         _buildSectionHeader('Enlaces de Musica'),
                         
                         _buildSocialTextField(
                           controller: _youtubeController,
                           label: 'YouTube',
                           hintText: 'https://youtube.com/@tucanal',
-                          icon: Icons.video_library,
                           platform: 'youtube',
                         ),
                         
@@ -253,7 +292,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _spotifyController,
                           label: 'Spotify',
                           hintText: 'https://open.spotify.com/artist/tu-id',
-                          icon: Icons.music_note,
                           platform: 'spotify',
                         ),
 
@@ -261,7 +299,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _soundcloudController,
                           label: 'SoundCloud',
                           hintText: 'https://soundcloud.com/tu-usuario',
-                          icon: Icons.cloud,
                           platform: 'soundcloud',
                         ),
 
@@ -269,8 +306,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _tiktokController,
                           label: 'TikTok',
                           hintText: 'https://tiktok.com/@tu-usuario',
-                          icon: Icons.video_camera_back,
-                          platform: 'tiktok',
+                          platform: 'tik-tok',
                         ),
                         
                         const SizedBox(height: 20),
@@ -280,7 +316,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _instagramController,
                           label: 'Instagram',
                           hintText: 'https://instagram.com/tu-usuario',
-                          icon: Icons.camera_alt,
                           platform: 'instagram',
                         ),
 
@@ -288,7 +323,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _facebookController,
                           label: 'Facebook',
                           hintText: 'https://facebook.com/tu-pagina',
-                          icon: Icons.facebook,
                           platform: 'facebook',
                         ),
 
@@ -299,7 +333,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _whatsappController,
                           label: 'WhatsApp',
                           hintText: 'https://wa.me/573001234567',
-                          icon: Icons.phone,
                           platform: 'whatsapp',
                         ),
 
@@ -307,8 +340,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _emailController,
                           label: 'Email de Contacto',
                           hintText: 'artista@email.com',
-                          icon: Icons.email,
-                          platform: 'email',
+                          platform: 'gmail',
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
                             if (value != null && value.isNotEmpty) {
@@ -360,6 +392,98 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildGenreDropdown() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: DropdownButtonFormField<String>(
+        value: _selectedGenre.isEmpty ? null : _selectedGenre,
+        decoration: InputDecoration(
+          labelText: 'Género musical',
+          labelStyle: const TextStyle(color: Color(0xFF4ADE80)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF4ADE80)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF86EFAC)),
+          ),
+          prefixIcon: const Icon(Icons.category, color: Color(0xFF4ADE80)),
+          filled: true,
+          fillColor: const Color(0xFF1E1E1E),
+        ),
+        dropdownColor: const Color(0xFF1E1E1E),
+        style: const TextStyle(color: Colors.white),
+        items: _genres.map((genre) => DropdownMenuItem(
+          value: genre,
+          child: Text(genre),
+        )).toList(),
+        onChanged: (value) {
+          setState(() {
+            _selectedGenre = value ?? '';
+          });
+        },
+        hint: const Text('Selecciona tu género', style: TextStyle(color: Colors.grey)),
+      ),
+    );
+  }
+
+  Widget _buildInstrumentsSelector() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF2D2D2D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _selectedInstruments.isEmpty
+                ? 'Selecciona los instrumentos que tocas'
+                : '${_selectedInstruments.length} instrumento(s) seleccionado(s)',
+            style: TextStyle(
+              color: _selectedInstruments.isEmpty ? Colors.grey : const Color(0xFF4ADE80),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _instrumentOptions.map((instrument) {
+              final selected = _selectedInstruments.contains(instrument);
+              return FilterChip(
+                label: Text(
+                  instrument,
+                  style: TextStyle(
+                    color: selected ? const Color(0xFF1E1E1E) : Colors.white,
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                selected: selected,
+                selectedColor: const Color(0xFF4ADE80),
+                checkmarkColor: const Color(0xFF1E1E1E),
+                backgroundColor: const Color(0xFF2D2D2D),
+                onSelected: (isSelected) {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedInstruments.add(instrument);
+                    } else {
+                      _selectedInstruments.remove(instrument);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -421,7 +545,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required TextEditingController controller,
     required String label,
     required String hintText,
-    required IconData icon,
     required String platform,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
@@ -445,7 +568,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: Color(0xFF4ADE80)),
           ),
-          prefixIcon: Icon(icon, color: const Color(0xFF4ADE80), size: 20),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Image.asset('assets/images/$platform.png', width: 20, height: 20,
+              errorBuilder: (c, e, s) => const Icon(Icons.link, color: Color(0xFF4ADE80), size: 20)),
+          ),
           filled: true,
           fillColor: const Color(0xFF1E1E1E),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

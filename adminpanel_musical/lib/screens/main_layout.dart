@@ -1,4 +1,7 @@
+import 'package:adminpanel_musical/screens/reviews_screen.dart';
 import 'package:adminpanel_musical/screens/songs_screen.dart';
+import 'package:adminpanel_musical/screens/events_screen.dart';
+import 'package:adminpanel_musical/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -16,18 +19,23 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   String _currentRoute = '/dashboard';
+  int _refreshCounter = 0;
 
   // Solo las pantallas que realmente usamos
   Widget _getCurrentScreen() {
     switch (_currentRoute) {
       case '/dashboard':
-        return const DashboardScreen();
+        return DashboardScreen(key: ValueKey('dash_$_refreshCounter'), onNavigate: _handleNavigation);
       case '/users':
-        return const UsersScreen();
+        return UsersScreen(key: ValueKey('users_$_refreshCounter'));
       case '/songs':
-        return const SongsScreen(); // ← AGREGAR ESTA LÍNEA
+        return SongsScreen(key: ValueKey('songs_$_refreshCounter'));
+      case '/reviews':
+        return ReviewsScreen(key: ValueKey('reviews_$_refreshCounter'));
+      case '/events':
+        return EventsScreen(key: ValueKey('events_$_refreshCounter'));
       default:
-        return const DashboardScreen();
+        return DashboardScreen(key: ValueKey('dash_$_refreshCounter'), onNavigate: _handleNavigation);
     }
   }
 
@@ -38,7 +46,11 @@ class _MainLayoutState extends State<MainLayout> {
       case '/users':
         return 'Gestión de Usuarios';
       case '/songs':
-        return 'Todas las Canciones'; // ← AGREGAR ESTA LÍNEA
+        return 'Todas las Canciones';
+      case '/reviews':
+        return 'Revisiones';
+      case '/events':
+        return 'Gestión de Eventos';
       default:
         return 'Panel Admin HSound';
     }
@@ -48,6 +60,136 @@ class _MainLayoutState extends State<MainLayout> {
     setState(() {
       _currentRoute = route;
     });
+  }
+
+  void _showCreateAdminDialog(BuildContext context) {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final nameController = TextEditingController();
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text(
+            'Crear Nuevo Administrador',
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'El nuevo administrador podrá iniciar sesión en el panel con su email y contraseña.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Nombre completo',
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailController,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña (mín. 6 caracteres)',
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final name = nameController.text.trim();
+                      final email = emailController.text.trim();
+                      final password = passwordController.text.trim();
+
+                      if (name.isEmpty || email.isEmpty || password.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Completa todos los campos (contraseña mín. 6 caracteres)'),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isLoading = true);
+
+                      final authService = AuthService();
+                      final result = await authService.createAdmin(email, password, name);
+
+                      setDialogState(() => isLoading = false);
+
+                      if (result['success'] == true) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Administrador "$name" creado exitosamente'),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: ${result['message']}'),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: isLoading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Crear Admin'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAdminProfile(BuildContext context) {
@@ -238,11 +380,12 @@ class _MainLayoutState extends State<MainLayout> {
                             icon: const Icon(Icons.refresh),
                             color: AppColors.textSecondary,
                             onPressed: () {
-                              // Forzar recarga de datos
-                              setState(() {});
+                              setState(() {
+                                _refreshCounter++;
+                              });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Datos actualizados'),
+                                  content: Text('Datos recargados'),
                                   backgroundColor: AppColors.success,
                                   duration: Duration(seconds: 2),
                                 ),
@@ -280,6 +423,27 @@ class _MainLayoutState extends State<MainLayout> {
                                   onTap: () {
                                     Navigator.pop(context);
                                     _showAdminProfile(context);
+                                  },
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                child: ListTile(
+                                  dense: true,
+                                  leading: const Icon(
+                                    Icons.admin_panel_settings,
+                                    color: AppColors.warning,
+                                    size: 20,
+                                  ),
+                                  title: const Text(
+                                    'Crear Administrador',
+                                    style: TextStyle(
+                                      color: AppColors.warning,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    _showCreateAdminDialog(context);
                                   },
                                 ),
                               ),

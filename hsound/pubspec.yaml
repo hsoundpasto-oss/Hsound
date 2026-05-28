@@ -45,8 +45,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logotipo_Hsound.png
-    - assets/images/google_icon.png
+    - assets/images/
 
 flutter_icons:
   android: "launcher_icon"

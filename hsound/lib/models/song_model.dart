@@ -5,16 +5,20 @@ class Song {
   final String title;
   final String artistId;
   final String artistName;
-  final String platform; // 'youtube', 'spotify', 'deezer', etc.
+  final String platform;
   final String url;
   final String genre;
   final String? description;
-  final int duration; // en segundos
+  final int duration;
   final DateTime createdAt;
   final int likes;
   final int plays;
-  final List<String> searchKeywords; // Lista de palabras clave para búsqueda
-  final bool isLiked; //CAMPO PARA ESTADO DE LIKE
+  final List<String> searchKeywords;
+  final bool isLiked;
+  final String status;
+  final String? reviewMessage;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
 
   Song({
     required this.id,
@@ -29,8 +33,12 @@ class Song {
     required this.createdAt,
     this.likes = 0,
     this.plays = 0,
-    required this.searchKeywords, // inicializar en el constructor
-    this.isLiked = false, // Valor por defecto
+    required this.searchKeywords,
+    this.isLiked = false,
+    this.status = 'pending',
+    this.reviewMessage,
+    this.reviewedAt,
+    this.reviewedBy,
   });
 
   // Convertir de Firestore a objeto Song
@@ -50,8 +58,12 @@ class Song {
       likes: data['likes'] ?? 0,
       plays: data['plays'] ?? 0,
       searchKeywords:
-          List<String>.from(data['searchKeywords'] ?? []), // manejar null
-      isLiked: false, // Se actualizará después
+          List<String>.from(data['searchKeywords'] ?? []),
+      isLiked: false,
+      status: data['status'] ?? 'pending',
+      reviewMessage: data['reviewMessage'],
+      reviewedAt: data['reviewedAt'] != null ? (data['reviewedAt'] as Timestamp).toDate() : null,
+      reviewedBy: data['reviewedBy'],
     );
   }
 
@@ -69,7 +81,11 @@ class Song {
       'createdAt': FieldValue.serverTimestamp(),
       'likes': likes,
       'plays': plays,
-      'searchKeywords': searchKeywords, // incluir en el Map
+      'searchKeywords': searchKeywords,
+      'status': status,
+      'reviewMessage': reviewMessage,
+      'reviewedAt': reviewedAt != null ? Timestamp.fromDate(reviewedAt!) : null,
+      'reviewedBy': reviewedBy,
     };
   }
 
@@ -90,6 +106,10 @@ class Song {
       plays: plays,
       searchKeywords: searchKeywords,
       isLiked: isLiked ?? this.isLiked,
+      status: status,
+      reviewMessage: reviewMessage,
+      reviewedAt: reviewedAt,
+      reviewedBy: reviewedBy,
     );
   }
 }

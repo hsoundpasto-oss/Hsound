@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class EventModel {
+class Event {
   final String id;
   final String artistId;
   final String artistName;
@@ -14,10 +14,8 @@ class EventModel {
   final String status;
   final DateTime createdAt;
   final String? reviewMessage;
-  final String? reviewedBy;
-  final DateTime? reviewedAt;
 
-  EventModel({
+  Event({
     required this.id,
     required this.artistId,
     required this.artistName,
@@ -31,13 +29,11 @@ class EventModel {
     this.status = 'pending',
     required this.createdAt,
     this.reviewMessage,
-    this.reviewedBy,
-    this.reviewedAt,
   });
 
-  factory EventModel.fromFirestore(DocumentSnapshot doc) {
+  factory Event.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    return EventModel(
+    return Event(
       id: doc.id,
       artistId: data['artistId'] ?? '',
       artistName: data['artistName'] ?? '',
@@ -51,10 +47,6 @@ class EventModel {
       status: data['status'] ?? 'pending',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       reviewMessage: data['reviewMessage'],
-      reviewedBy: data['reviewedBy'],
-      reviewedAt: data['reviewedAt'] != null
-          ? (data['reviewedAt'] as Timestamp).toDate()
-          : null,
     );
   }
 
@@ -70,46 +62,26 @@ class EventModel {
       'eventDate': Timestamp.fromDate(eventDate),
       'price': price,
       'status': status,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': FieldValue.serverTimestamp(),
       'reviewMessage': reviewMessage,
-      'reviewedBy': reviewedBy,
-      'reviewedAt': reviewedAt != null ? Timestamp.fromDate(reviewedAt!) : null,
     };
   }
 
-  EventModel copyWith({
-    String? id,
-    String? artistId,
-    String? artistName,
-    String? title,
-    String? description,
-    String? venue,
-    String? address,
-    String? googleMapsUrl,
-    DateTime? eventDate,
-    String? price,
-    String? status,
-    DateTime? createdAt,
-    String? reviewMessage,
-    String? reviewedBy,
-    DateTime? reviewedAt,
-  }) {
-    return EventModel(
+  Event copyWith({String? id}) {
+    return Event(
       id: id ?? this.id,
-      artistId: artistId ?? this.artistId,
-      artistName: artistName ?? this.artistName,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      venue: venue ?? this.venue,
-      address: address ?? this.address,
-      googleMapsUrl: googleMapsUrl ?? this.googleMapsUrl,
-      eventDate: eventDate ?? this.eventDate,
-      price: price ?? this.price,
-      status: status ?? this.status,
-      createdAt: createdAt ?? this.createdAt,
-      reviewMessage: reviewMessage ?? this.reviewMessage,
-      reviewedBy: reviewedBy ?? this.reviewedBy,
-      reviewedAt: reviewedAt ?? this.reviewedAt,
+      artistId: artistId,
+      artistName: artistName,
+      title: title,
+      description: description,
+      venue: venue,
+      address: address,
+      googleMapsUrl: googleMapsUrl,
+      eventDate: eventDate,
+      price: price,
+      status: status,
+      createdAt: createdAt,
+      reviewMessage: reviewMessage,
     );
   }
 }

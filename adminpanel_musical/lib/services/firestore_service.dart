@@ -22,11 +22,24 @@ class FirestoreService {
       final songsSnapshot = await _firestore.collection('songs').count().get();
       final totalSongs = songsSnapshot.count;
 
+      // Obtener total de eventos y eventos pendientes
+      final eventsSnapshot = await _firestore.collection('events').count().get();
+      final totalEvents = eventsSnapshot.count;
+
+      final pendingEventsSnapshot = await _firestore
+          .collection('events')
+          .where('status', isEqualTo: 'pending')
+          .count()
+          .get();
+      final pendingEvents = pendingEventsSnapshot.count;
+
       return {
         'totalUsers': totalUsers,
         'totalArtists': totalArtists,
         'totalSongs': totalSongs,
-        'pendingApprovals': 0, // Puedes implementar esto después
+        'pendingApprovals': 0,
+        'totalEvents': totalEvents,
+        'pendingEvents': pendingEvents,
       };
     } catch (e) {
       print('Error getting dashboard stats: $e');
@@ -35,6 +48,8 @@ class FirestoreService {
         'totalArtists': 0, 
         'totalSongs': 0,
         'pendingApprovals': 0,
+        'totalEvents': 0,
+        'pendingEvents': 0,
       };
     }
   }
@@ -71,6 +86,20 @@ class FirestoreService {
         .snapshots();
   }
 
+  Future<QuerySnapshot> getSongsByArtist(String artistId) {
+    return _firestore
+        .collection('songs')
+        .where('artistId', isEqualTo: artistId)
+        .get();
+  }
+
+  Future<QuerySnapshot> getEventsByArtist(String artistId) {
+    return _firestore
+        .collection('events')
+        .where('artistId', isEqualTo: artistId)
+        .get();
+  }
+
   // Actualizar rol de usuario
   Future<void> updateUserRole(String userId, String newRole) async {
     await _firestore.collection('users').doc(userId).update({
@@ -101,5 +130,117 @@ class FirestoreService {
   // Eliminar canción
   Future<void> deleteSong(String songId) async {
     await _firestore.collection('songs').doc(songId).delete();
+  }
+
+  // Obtener canciones pendientes de revisión
+  Stream<QuerySnapshot> getPendingSongs() {
+    return _firestore
+        .collection('songs')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  // Obtener canciones por estado
+  Stream<QuerySnapshot> getSongsByStatus(String status) {
+    if (status == 'all') {
+      return getAllSongs();
+    }
+    return _firestore
+        .collection('songs')
+        .where('status', isEqualTo: status)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  // Aprobar canción
+  Future<void> approveSong(String songId, String adminUid) async {
+    await _firestore.collection('songs').doc(songId).update({
+      'status': 'approved',
+      'reviewedAt': FieldValue.serverTimestamp(),
+      'reviewedBy': adminUid,
+    });
+  }
+
+  // Rechazar canción con motivo
+  Future<void> rejectSong(String songId, String reason, String adminUid) async {
+    await _firestore.collection('songs').doc(songId).update({
+      'status': 'rejected',
+      'reviewMessage': reason,
+      'reviewedAt': FieldValue.serverTimestamp(),
+      'reviewedBy': adminUid,
+    });
+  }
+
+  // ========================================
+  // MÉTODOS PARA EVENTOS
+  // ========================================
+
+  Stream<QuerySnapshot> getAllEvents() {
+    return _firestore
+        .collection('events')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getEventsByStatus(String status) {
+    if (status == 'all') {
+      return getAllEvents();
+    }
+    return _firestore
+        .collection('events')
+        .where('status', isEqualTo: status)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Future<void> approveEvent(String eventId, String adminUid) async {
+    await _firestore.collection('events').doc(eventId).update({
+      'status': 'approved',
+      'reviewedAt': FieldValue.serverTimestamp(),
+      'reviewedBy': adminUid,
+    });
+  }
+
+  Future<void> rejectEvent(String eventId, String reason, String adminUid) async {
+    await _firestore.collection('events').doc(eventId).update({
+      'status': 'rejected',
+      'reviewMessage': reason,
+      'reviewedAt': FieldValue.serverTimestamp(),
+      'reviewedBy': adminUid,
+    });
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    await _firestore.collection('events').doc(eventId).delete();
+  }
+
+  Future<void> createEvent({
+    required String artistId,
+    required String artistName,
+    required String title,
+    String? description,
+    required String venue,
+    required String address,
+    String? googleMapsUrl,
+    required DateTime eventDate,
+    required String price,
+  }) async {
+    await _firestore.collection('events').add({
+      'artistId': artistId,
+      'artistName': artistName,
+      'title': title,
+      'description': description,
+      'venue': venue,
+      'address': address,
+      'googleMapsUrl': googleMapsUrl,
+      'eventDate': Timestamp.fromDate(eventDate),
+      'price': price,
+      'status': 'approved',
+      'createdAt': FieldValue.serverTimestamp(),
+      'reviewMessage': null,
+      'reviewedBy': null,
+      'reviewedAt': null,
+    });
   }
 }

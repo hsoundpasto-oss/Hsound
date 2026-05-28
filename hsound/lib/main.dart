@@ -5,6 +5,8 @@ import 'package:hsound/screens/profile/edit_profile_screen.dart';
 import 'package:hsound/screens/songs/song_player_screen.dart';
 import 'package:hsound/screens/home/home_screen.dart';
 import 'package:hsound/screens/profile/artist_profile_screen.dart';
+import 'package:hsound/screens/events/add_event_screen.dart';
+import 'package:hsound/screens/events/event_detail_screen.dart';
 import 'firebase_options.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
@@ -42,6 +44,12 @@ class MyApp extends StatelessWidget {
 
         '/edit_profile': (context) => const EditProfileScreen(),
         '/add_song': (context) => const AddSongScreen(),
+        '/add_event': (context) => const AddEventScreen(),
+        '/event_detail': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
+          return EventDetailScreen(eventId: args['eventId']);
+        },
 
         '/artist_profile': (context) {
           final args = ModalRoute.of(context)!.settings.arguments
@@ -58,6 +66,7 @@ class MyApp extends StatelessWidget {
             songTitle: args['title'],
             artistName: args['artist'],
             platform: args['platform'],
+            artistId: args['artistId'] ?? '',
           );
         },
 

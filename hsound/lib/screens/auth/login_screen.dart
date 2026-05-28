@@ -114,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await firestoreService.saveUserProfile({
         'name': googleUser.displayName ?? userCredential.user!.displayName ?? 'Usuario',
         'email': userEmail,
+        'photoUrl': googleUser.photoUrl ?? userCredential.user!.photoURL ?? '',
       });
 
       print('Login con Google exitoso: ${userCredential.user!.email}');
@@ -143,6 +144,96 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 }
+
+  void _showPasswordResetDialog() {
+    final emailController = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'Restablecer Contraseña',
+          style: TextStyle(color: Color(0xFF4ADE80)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: 'Correo electrónico',
+                labelStyle: const TextStyle(color: Color(0xFF4ADE80)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF4ADE80)),
+                ),
+                prefixIcon: const Icon(Icons.email, color: Color(0xFF4ADE80)),
+                filled: true,
+                fillColor: const Color(0xFF2D2D2D),
+              ),
+              style: const TextStyle(color: Colors.white),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty || !email.contains('@')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Ingresa un correo válido'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              try {
+                await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Correo enviado a $email. Revisa tu bandeja de entrada.'),
+                    backgroundColor: const Color(0xFF15803D),
+                  ),
+                );
+              } on FirebaseAuthException catch (e) {
+                String error = 'Error al enviar correo';
+                if (e.code == 'user-not-found') {
+                  error = 'No existe una cuenta con este correo';
+                } else if (e.code == 'invalid-email') {
+                  error = 'Correo electrónico no válido';
+                } else if (e.code == 'too-many-requests') {
+                  error = 'Demasiados intentos. Intenta más tarde.';
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4ADE80),
+              foregroundColor: const Color(0xFF1E1E1E),
+            ),
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -275,7 +366,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 8),
+                        
+                        // Botón de olvidé mi contraseña
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _showPasswordResetDialog,
+                            child: const Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: TextStyle(
+                                color: Color(0xFF4ADE80),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         
                         _isLoading
                             ? const CircularProgressIndicator(

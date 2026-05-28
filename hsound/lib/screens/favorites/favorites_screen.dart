@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hsound/services/firestore_service.dart';
-import 'package:hsound/models/song_model.dart';
 import 'package:hsound/services/share_service.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -16,45 +15,47 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final User? user = FirebaseAuth.instance.currentUser;
 
-void _shareSong(String title, String artist) async {
-  try {
-    await ShareService.shareSong(
-      songTitle: title,
-      artistName: artist,
-    );
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'Cancion compartida + App',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+  void _shareSong(String title, String artist) async {
+    try {
+      await ShareService.shareSong(
+        songTitle: title,
+        artistName: artist,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Cancion compartida + App',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: const Color(0xFF15803D),
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: const Color(0xFF15803D),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Error al compartir: $e',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Error al compartir: $e',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.red[700],
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: Colors.red[700],
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+      );
+    }
   }
 
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Icon(Icons.video_library, color: Colors.red, size: 16);
+        return Image.asset('assets/images/youtube.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.video_library, color: Colors.red, size: 16));
       case 'spotify':
-        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
-      case 'deezer':
-        return const Icon(Icons.audiotrack, color: Color(0xFFFF0000), size: 16);
+        return Image.asset('assets/images/spotify.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16));
+      case 'soundcloud':
+        return Image.asset('assets/images/soundcloud.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16));
+      case 'youtube_music':
+        return Image.asset('assets/images/youtube.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.library_music, color: Colors.red, size: 16));
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }
@@ -118,16 +119,6 @@ void _shareSong(String title, String artist) async {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Volver al home
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4ADE80),
-                      foregroundColor: const Color(0xFF1E1E1E),
-                    ),
-                    child: const Text('Explorar Canciones'),
-                  ),
                 ],
               ),
             );
@@ -147,6 +138,7 @@ void _shareSong(String title, String artist) async {
                   songId: songDoc.id,
                   title: data['title'] ?? 'Sin título',
                   artist: data['artistName'] ?? 'Artista desconocido',
+                  artistId: data['artistId'] ?? '',
                   genre: data['genre'] ?? 'General',
                   platform: data['platform'] ?? 'youtube',
                   likes: data['likes'] ?? 0,
@@ -164,6 +156,7 @@ void _shareSong(String title, String artist) async {
     required String songId,
     required String title,
     required String artist,
+    required String artistId,
     required String genre,
     required String platform,
     required int likes,
@@ -195,7 +188,7 @@ void _shareSong(String title, String artist) async {
             child: _getPlatformIcon(platform),
           ),
           const SizedBox(width: 16),
-          
+
           // Información de la canción
           Expanded(
             child: Column(
@@ -230,17 +223,18 @@ void _shareSong(String title, String artist) async {
               ],
             ),
           ),
-          
+
           // Botones de acción
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Botón de like (ya está en favoritos, mostrar lleno)
               StreamBuilder<bool>(
-                stream: Stream.fromFuture(_firestoreService.isSongLiked(songId)),
+                stream:
+                    Stream.fromFuture(_firestoreService.isSongLiked(songId)),
                 builder: (context, snapshot) {
                   final isLiked = snapshot.data ?? true;
-                  
+
                   return IconButton(
                     onPressed: () async {
                       await _firestoreService.toggleLike(songId);
@@ -259,14 +253,14 @@ void _shareSong(String title, String artist) async {
                   );
                 },
               ),
-              
+
               // Botón de compartir
               IconButton(
                 onPressed: () => _shareSong(title, artist),
                 icon: const Icon(Icons.share, color: Color(0xFF4ADE80)),
                 tooltip: 'Compartir canción',
               ),
-              
+
               // Botón de reproducir
               IconButton(
                 onPressed: () {
@@ -278,6 +272,7 @@ void _shareSong(String title, String artist) async {
                       'title': title,
                       'artist': artist,
                       'platform': platform,
+                      'artistId': artistId,
                     },
                   );
                 },

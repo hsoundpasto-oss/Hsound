@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hsound/services/firestore_service.dart';
-import 'package:hsound/services/share_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/event_model.dart';
+import '../../services/share_service.dart';
 
 class ArtistProfileScreen extends StatefulWidget {
   final String artistId;
@@ -14,16 +14,17 @@ class ArtistProfileScreen extends StatefulWidget {
 }
 
 class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
   Map<String, dynamic>? _artistData;
   bool _isLoading = true;
   List<QueryDocumentSnapshot> _artistSongs = [];
+  List<QueryDocumentSnapshot> _artistEvents = [];
 
   @override
   void initState() {
     super.initState();
     _loadArtistData();
     _loadArtistSongs();
+    _loadArtistEvents();
   }
 
   Future<void> _loadArtistData() async {
@@ -57,7 +58,8 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
 
       final songsQuery = await FirebaseFirestore.instance
           .collection('songs')
-          .where('artistId', isEqualTo: widget.artistId) // 🎯 USA artistId
+          .where('artistId', isEqualTo: widget.artistId)
+          .where('status', isEqualTo: 'approved')
           .orderBy('createdAt', descending: true)
           .get();
 
@@ -74,6 +76,23 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       });
     } catch (e) {
       print('❌ Error cargando canciones del artista: $e');
+    }
+  }
+
+  Future<void> _loadArtistEvents() async {
+    try {
+      final eventsQuery = await FirebaseFirestore.instance
+          .collection('events')
+          .where('artistId', isEqualTo: widget.artistId)
+          .where('status', isEqualTo: 'approved')
+          .orderBy('eventDate', descending: false)
+          .get();
+
+      setState(() {
+        _artistEvents = eventsQuery.docs;
+      });
+    } catch (e) {
+      print('❌ Error cargando eventos del artista: $e');
     }
   }
 
@@ -257,6 +276,60 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ),
+
+                        // Género musical
+                        if (_artistData?['musicalGenre'] != null && _artistData!['musicalGenre'].toString().isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4ADE80).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Género: ${_artistData!['musicalGenre']}',
+                                style: const TextStyle(
+                                  color: Color(0xFF4ADE80),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // Instrumentos
+                        if (_artistData?['instruments'] != null && (_artistData!['instruments'] as List).isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Instrumentos:',
+                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: (_artistData!['instruments'] as List).map((inst) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF2D2D2D),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFF4ADE80).withOpacity(0.3)),
+                                      ),
+                                      child: Text(
+                                        inst.toString(),
+                                        style: const TextStyle(color: Colors.white, fontSize: 11),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -283,6 +356,24 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                     _buildEmptySongsState()
                   else
                     _buildArtistSongsList(),
+
+                  const SizedBox(height: 24),
+
+                  // Sección de Eventos del Artista
+                  const Text(
+                    'Eventos',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (_artistEvents.isEmpty)
+                    _buildEmptyEventsState()
+                  else
+                    _buildArtistEventsList(),
                 ],
               ),
             ),
@@ -294,6 +385,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     await Future.wait([
       _loadArtistData(),
       _loadArtistSongs(),
+      _loadArtistEvents(),
     ]);
   }
 
@@ -315,6 +407,144 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEmptyEventsState() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.event_busy, color: Colors.grey, size: 50),
+          const SizedBox(height: 12),
+          Text(
+            '${_artistData?['name'] ?? 'Este artista'} aún no tiene eventos',
+            style: const TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildArtistEventsList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _artistEvents.length,
+      itemBuilder: (context, index) {
+        final eventDoc = _artistEvents[index];
+        final eventObj = Event.fromFirestore(eventDoc);
+
+        final isExpired = eventObj.eventDate.isBefore(DateTime.now());
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/event_detail',
+              arguments: {'eventId': eventDoc.id},
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isExpired
+                    ? Colors.grey.withOpacity(0.3)
+                    : const Color(0xFF4ADE80).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2D2D2D),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    isExpired ? Icons.event_busy : Icons.event,
+                    color: isExpired ? Colors.grey : const Color(0xFF4ADE80),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              eventObj.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isExpired)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'Expirado',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${eventObj.venue} • ${eventObj.price}',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${eventObj.eventDate.day}/${eventObj.eventDate.month}/${eventObj.eventDate.year}',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Color(0xFF4ADE80),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -355,6 +585,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
             'title': title,
             'artist': artist,
             'platform': platform,
+            'artistId': widget.artistId,
           },
         );
       },
@@ -417,6 +648,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                     'title': title,
                     'artist': artist,
                     'platform': platform,
+                    'artistId': widget.artistId,
                   },
                 );
               },
@@ -470,73 +702,65 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           if (_artistData?['youtubeUrl'] != null &&
               _artistData!['youtubeUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.video_library,
+              platform: 'youtube',
               label: 'YouTube',
               url: _artistData!['youtubeUrl'],
-              color: Colors.red,
             ),
 
           if (_artistData?['spotifyUrl'] != null &&
               _artistData!['spotifyUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.music_note,
+              platform: 'spotify',
               label: 'Spotify',
               url: _artistData!['spotifyUrl'],
-              color: Color(0xFF1DB954),
             ),
 
           if (_artistData?['soundcloudUrl'] != null &&
               _artistData!['soundcloudUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.cloud,
+              platform: 'soundcloud',
               label: 'SoundCloud',
               url: _artistData!['soundcloudUrl'],
-              color: Color(0xFFFF7700),
             ),
 
           if (_artistData?['tiktokUrl'] != null &&
               _artistData!['tiktokUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.video_camera_back,
+              platform: 'tik-tok',
               label: 'TikTok',
               url: _artistData!['tiktokUrl'],
-              color: Color(0xFF000000),
             ),
 
           if (_artistData?['instagramUrl'] != null &&
               _artistData!['instagramUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.camera_alt,
+              platform: 'instagram',
               label: 'Instagram',
               url: _artistData!['instagramUrl'],
-              color: Color(0xFFE4405F),
             ),
 
           if (_artistData?['facebookUrl'] != null &&
               _artistData!['facebookUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.facebook,
+              platform: 'facebook',
               label: 'Facebook',
               url: _artistData!['facebookUrl'],
-              color: Color(0xFF1877F2),
             ),
 
           if (_artistData?['whatsappUrl'] != null &&
               _artistData!['whatsappUrl'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.phone,
+              platform: 'whatsapp',
               label: 'WhatsApp',
               url: _artistData!['whatsappUrl'],
-              color: Color(0xFF25D366),
             ),
 
           if (_artistData?['contactEmail'] != null &&
               _artistData!['contactEmail'].toString().isNotEmpty)
             _buildSocialLinkItem(
-              icon: Icons.email,
+              platform: 'gmail',
               label: 'Email de Contacto',
               url: 'mailto:${_artistData!['contactEmail']}',
-              color: Color(0xFFEA4335),
             ),
         ],
       ),
@@ -545,11 +769,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
 
   // Item de enlace social
   Widget _buildSocialLinkItem({
-    required IconData icon,
+    required String platform,
     required String label,
     required String url,
-    required Color color,
   }) {
+    final color = _socialColor(platform);
     return GestureDetector(
       onTap: () => _launchSocialUrl(url),
       child: Container(
@@ -562,7 +786,8 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: color),
+            Image.asset('assets/images/$platform.png', width: 24, height: 24,
+              errorBuilder: (c, e, s) => Icon(Icons.link, color: color, size: 20)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -584,15 +809,31 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     );
   }
 
+  Color _socialColor(String platform) {
+    switch (platform) {
+      case 'youtube': return Colors.red;
+      case 'spotify': return const Color(0xFF1DB954);
+      case 'soundcloud': return const Color(0xFFFF7700);
+      case 'tik-tok': return const Color(0xFF000000);
+      case 'instagram': return const Color(0xFFE4405F);
+      case 'facebook': return const Color(0xFF1877F2);
+      case 'whatsapp': return const Color(0xFF25D366);
+      case 'gmail': return const Color(0xFFEA4335);
+      default: return Colors.grey;
+    }
+  }
+
   // Iconos por plataforma
   Widget _getPlatformIcon(String platform) {
     switch (platform) {
       case 'youtube':
-        return const Icon(Icons.video_library, color: Colors.red, size: 16);
+        return Image.asset('assets/images/youtube.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.video_library, color: Colors.red, size: 16));
       case 'spotify':
-        return const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16);
+        return Image.asset('assets/images/spotify.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.music_note, color: Color(0xFF1DB954), size: 16));
       case 'soundcloud':
-        return const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16);
+        return Image.asset('assets/images/soundcloud.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.cloud, color: Color(0xFFFF7700), size: 16));
+      case 'youtube_music':
+        return Image.asset('assets/images/youtube.png', width: 20, height: 20, errorBuilder: (c, e, s) => const Icon(Icons.library_music, color: Colors.red, size: 16));
       default:
         return const Icon(Icons.music_note, color: Color(0xFF4ADE80), size: 16);
     }
