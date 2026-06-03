@@ -1,0 +1,79 @@
+erDiagram
+    USERS {
+        string id PK "UID de Firebase Auth"
+        string name "Nombre completo"
+        string email "Correo electronico"
+        boolean isArtist "Es artista?"
+        boolean isAdmin "Es admin?"
+        string role "admin | musician | user"
+        string photoUrl "URL foto de perfil"
+        string bio "Biografia"
+        string contactEmail "Email de contacto"
+        string facebookUrl "Facebook"
+        string instagramUrl "Instagram"
+        string spotifyUrl "Spotify"
+        string tiktokUrl "TikTok"
+        string whatsappUrl "WhatsApp"
+        string youtubeUrl "YouTube"
+        boolean isActive "Cuenta activa?"
+        timestamp createdAt "Fecha de creacion"
+        timestamp updatedAt "Fecha de actualizacion"
+        array searchKeywords "Palabras clave busqueda"
+    }
+
+    SONGS {
+        string id PK "ID auto-generado"
+        string title "Titulo de la cancion"
+        string artistId FK "Referencia a users.id"
+        string artistName "Nombre del artista (denormalizado)"
+        string platform "youtube | spotify"
+        string url "URL de la plataforma"
+        string genre "Genero musical"
+        string description "Descripcion"
+        int duration "Duracion en segundos"
+        timestamp createdAt "Fecha de subida"
+        int likes "Contador de likes"
+        int plays "Contador de reproducciones"
+        array searchKeywords "Palabras clave busqueda"
+        string status "pending | approved | rejected"
+        string reviewMessage "Motivo de rechazo"
+        timestamp reviewedAt "Fecha de revision"
+        string reviewedBy FK "Referencia a users.id (admin)"
+    }
+
+    EVENTS {
+        string id PK "ID auto-generado"
+        string artistId FK "Referencia a users.id"
+        string artistName "Nombre del artista (denormalizado)"
+        string title "Titulo del evento"
+        string description "Descripcion"
+        string venue "Lugar del evento"
+        string address "Direccion fisica"
+        string googleMapsUrl "URL Google Maps"
+        timestamp eventDate "Fecha del evento"
+        string price "Precio"
+        string status "pending | approved | rejected"
+        timestamp createdAt "Fecha de creacion"
+        string reviewMessage "Motivo de rechazo"
+        string reviewedBy FK "Referencia a users.id (admin)"
+        timestamp reviewedAt "Fecha de revision"
+    }
+
+    USERLIKES {
+        string id PK "Compuesto: userId_songId"
+        string userId FK "Referencia a users.id"
+        string songId FK "Referencia a songs.id"
+        timestamp createdAt "Fecha del like"
+    }
+
+    ADMIN {
+        string document "Wildcard {document=**}"
+        string note "Sin esquema fijo - solo admins"
+    }
+
+    USERS ||--o{ SONGS : "artistId -> es el artista"
+    USERS ||--o{ EVENTS : "artistId -> es el artista"
+    USERS ||--o{ USERLIKES : "userId -> da like"
+    SONGS ||--o{ USERLIKES : "songId -> recibe like"
+    USERS ||--o{ SONGS : "reviewedBy -> revisa canciones"
+    USERS ||--o{ EVENTS : "reviewedBy -> revisa eventos"

@@ -138,6 +138,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _showErrorSnackBar('Enlace no válido');
         return;
       }
+      if (uri.scheme == 'mailto') {
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          _showErrorSnackBar('No se pudo abrir el cliente de correo');
+        }
+        return;
+      }
       if (!await canLaunchUrl(uri)) {
         _showErrorSnackBar('No hay una aplicación instalada para abrir este enlace');
         return;

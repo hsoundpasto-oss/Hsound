@@ -113,6 +113,18 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         }
         return;
       }
+      if (uri.scheme == 'mailto') {
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: const Text('No se pudo abrir el cliente de correo'), backgroundColor: Colors.red),
+            );
+          }
+        }
+        return;
+      }
       if (!await canLaunchUrl(uri)) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
