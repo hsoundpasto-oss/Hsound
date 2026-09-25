@@ -1,3 +1,23 @@
+# Dependencias y entorno
 node_modules/
 .env
 dist/
+
+# Firebase CLI (cache local, no versionar)
+.firebase/
+
+# Artefactos de build de Flutter (las dos apps)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/*.iml
+
+# Generado por flutter_launcher_icons
+**/flutter_launcher_icons.dart
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+*.log
+*.swp
