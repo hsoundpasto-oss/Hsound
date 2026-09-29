@@ -71,31 +71,53 @@ assets/screenshots/
 
 Esta carpeta vive en la raíz del repositorio y **no** forma parte de ninguna de las dos aplicaciones Flutter, por lo que no se empaqueta en los builds ni incrementa su tamaño.
 
+GitHub no permite superponer texto sobre una imagen en el README, así que cada nombre se ubica en una celda encima de su captura dentro de una tabla.
+
 ### App móvil
 
-<p align="center">
-  <img src="assets/screenshots/app/inicio.png" alt="Feed de inicio" width="260">
-  <img src="assets/screenshots/app/busqueda.png" alt="Búsqueda con filtros" width="260">
-  <img src="assets/screenshots/app/reproductor.png" alt="Reproductor de canción" width="260">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/app/favoritos.png" alt="Lista de favoritos" width="260">
-  <img src="assets/screenshots/app/perfil-artista.png" alt="Perfil de artista" width="260">
-  <img src="assets/screenshots/app/registro.png" alt="Registro e inicio de sesión" width="260">
-</p>
+<table>
+  <tr>
+    <td align="center" width="200"><strong>Inicio</strong><br>Feed de canciones locales</td>
+    <td align="center" width="200"><strong>Búsqueda</strong><br>Filtros por género y popularidad</td>
+    <td align="center" width="200"><strong>Reproductor</strong><br>YouTube, Spotify y SoundCloud</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/screenshots/app/inicio.png" alt="Feed de inicio" width="200"></td>
+    <td align="center"><img src="assets/screenshots/app/busqueda.png" alt="Búsqueda con filtros" width="200"></td>
+    <td align="center"><img src="assets/screenshots/app/reproductor.png" alt="Reproductor de canción" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center" width="200"><strong>Favoritos</strong><br>Canciones guardadas</td>
+    <td align="center" width="200"><strong>Perfil de artista</strong><br>Bio, foto y redes sociales</td>
+    <td align="center" width="200"><strong>Registro</strong><br>Acceso con correo y Google</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/screenshots/app/favoritos.png" alt="Lista de favoritos" width="200"></td>
+    <td align="center"><img src="assets/screenshots/app/perfil-artista.png" alt="Perfil de artista" width="200"></td>
+    <td align="center"><img src="assets/screenshots/app/registro.png" alt="Registro e inicio de sesión" width="200"></td>
+  </tr>
+</table>
 
 ### Panel administrativo
 
-<p align="center">
-  <img src="assets/screenshots/admin/dashboard.png" alt="Dashboard del panel" width="420">
-  <img src="assets/screenshots/admin/aprobaciones.png" alt="Aprobación de contenido" width="420">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/admin/usuarios.png" alt="Gestión de usuarios" width="420">
-  <img src="assets/screenshots/admin/canciones.png" alt="Gestión de canciones" width="420">
-</p>
+<table>
+  <tr>
+    <td align="center" width="420"><strong>Dashboard</strong><br>Resumen de usuarios, canciones y eventos</td>
+    <td align="center" width="420"><strong>Aprobaciones</strong><br>Revisión de canciones y eventos</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/screenshots/admin/dashboard.png" alt="Dashboard del panel" width="420"></td>
+    <td align="center"><img src="assets/screenshots/admin/aprobaciones.png" alt="Aprobación de contenido" width="420"></td>
+  </tr>
+  <tr>
+    <td align="center" width="420"><strong>Usuarios</strong><br>Gestión de cuentas y roles</td>
+    <td align="center" width="420"><strong>Canciones</strong><br>Listado, edición y eliminación</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/screenshots/admin/usuarios.png" alt="Gestión de usuarios" width="420"></td>
+    <td align="center"><img src="assets/screenshots/admin/canciones.png" alt="Gestión de canciones" width="420"></td>
+  </tr>
+</table>
 
 ## Funcionalidades
 
